@@ -681,7 +681,7 @@ export default function TradingGame() {
                   setGameState('playing');
                   setLives(gameMode === 'standard' ? 3 : 1);
                   setScore(0);
-                  setLevel(1);
+                  if (gameMode !== 'standard') setLevel(1); // Standard keeps level
                   setCheckpointReached(false); // Reset checkpoint on full loss
                   setLevelProgress(0); // Reset progress
                 }}
