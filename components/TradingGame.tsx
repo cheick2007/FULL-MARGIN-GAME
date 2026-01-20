@@ -515,12 +515,7 @@ export default function TradingGame() {
 
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
-      canvas.removeEventListener('touchstart', handleTouch);
-      cancelAnimationFrame(animationFrameId);
-    };
-    return () => {
-      window.removeEventListener('keydown', handleKeyDown);
-      canvas.removeEventListener('touchstart', handleTouch);
+      canvas?.removeEventListener('touchstart', handleTouch);
       cancelAnimationFrame(animationFrameId);
     };
   }, [gameState, level, gameMode, speedSetting]); // Added speedSetting dep
