@@ -2,257 +2,445 @@
 
 import React, { useEffect, useRef, useState } from 'react';
 
+type GameMode = 'standard' | 'hardcore' | null;
+
 export default function TradingGame() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [gameState, setGameState] = useState<'start' | 'playing' | 'gameover'>('start');
+  const [gameMode, setGameMode] = useState<GameMode>(null); // Start in Menu (null)
+  const [gameState, setGameState] = useState<'menu' | 'start' | 'playing' | 'gameover' | 'levelcomplete'>('menu');
   const [score, setScore] = useState(0);
+  const [level, setLevel] = useState(1);
+  const [lives, setLives] = useState(3);
+
+  const [levelProgress, setLevelProgress] = useState(0);
+  const [targetDistance, setTargetDistance] = useState(1000);
+
+  // Initialize Game Mode
+  const selectMode = (mode: GameMode) => {
+    setGameMode(mode);
+    setLives(mode === 'standard' ? 3 : 1);
+    setGameState('start'); // Go to "Initialize" screen
+  };
+
+  const returnToMenu = () => {
+    setGameMode(null);
+    setGameState('menu');
+    setLevel(1);
+    setScore(0);
+  };
 
   useEffect(() => {
+    // Resize handler outside game loop to always work
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const resizeCanvas = () => {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    };
+    resizeCanvas();
+    window.addEventListener('resize', resizeCanvas);
+
+    return () => window.removeEventListener('resize', resizeCanvas);
+  }, []);
+
+  useEffect(() => {
+    if (gameState === 'menu') return; // Don't run game physics in menu
+
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    // Game Variables
+    // Variables
     let animationFrameId: number;
     let frames = 0;
-    let gameSpeed = 5;
-    let currentScore = 0;
+    let gameSpeed = 6 + (level * 0.5);
+    let currentScore = score;
+    let currentLives = lives;
+    let distanceTraveled = 0;
+
+    const levelLength = 2000 + (level * 800);
+    let currentTargetDistance = levelLength;
 
     // Player
     const player = {
       x: 100,
-      y: 200,
+      y: canvas.height / 2,
       width: 40,
       height: 40,
       dy: 0,
-      jumpStrength: 12,
-      gravity: 0.6,
+      jumpStrength: 13,
+      gravity: 0.7,
       grounded: false,
-      color: '#3b82f6', // Blue (Trader)
+      jumpCount: 0,
+      color: '#3b82f6',
+      invulnerable: 0,
     };
 
-    // World
-    interface Candle {
-      x: number;
-      y: number;
-      width: number;
-      height: number;
-      color: string;
-      type: 'candle';
-    }
-    
-    interface Enemy {
-      x: number;
-      y: number;
-      width: number;
-      height: number;
-      type: 'bank';
-    }
+    interface Candle { x: number; y: number; width: number; height: number; color: string; type: 'candle'; }
+    interface Drone { x: number; y: number; width: number; height: number; type: 'drone'; startY: number; offset: number; }
+    interface Projectile { x: number; y: number; dx: number; dy: number; type: 'SL'; width: number; height: number; }
+    interface TPPlatform { x: number; y: number; width: number; height: number; type: 'tp_platform'; }
 
-    let obstacles: (Candle | Enemy)[] = [];
-    
+    let obstacles: Candle[] = [];
+    let enemies: Drone[] = [];
+    let projectiles: Projectile[] = [];
+    let tpPlatform: TPPlatform | null = null;
+
     // Initial Platform
+    const groundLevel = canvas.height * 0.75;
     obstacles.push({
       x: 50,
-      y: 400,
-      width: 200,
-      height: 300, // Extends down
-      color: '#22c55e', // Green
+      y: groundLevel,
+      width: 600,
+      height: canvas.height,
+      color: '#22c55e',
       type: 'candle'
     });
 
-    // Input Handling
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.code === 'Space' || e.code === 'ArrowUp') {
-        if (gameState === 'start' || gameState === 'gameover') {
-          // Restart handled by UI button for gameover, but space starts 'start'
-          if (gameState === 'start') setGameState('playing');
-        } else if (player.grounded) {
-          player.dy = -player.jumpStrength;
-          player.grounded = false;
-        }
-      }
-    };
-    
-    // Touch support for mobile
-    const handleTouch = () => {
-         if (gameState === 'start') {
-             setGameState('playing'); 
-         } else if (player.grounded) {
-             player.dy = -player.jumpStrength;
-             player.grounded = false;
-         }
+    player.y = groundLevel - 100;
+
+    const spawnProjectile = (drone: Drone) => {
+      projectiles.push({
+        x: drone.x,
+        y: drone.y + drone.height / 2,
+        dx: -6 - (level * 0.6),
+        dy: (player.y - drone.y) * 0.015,
+        type: 'SL',
+        width: 25,
+        height: 12
+      });
     };
 
-    window.addEventListener('keydown', handleKeyDown);
-    canvas.addEventListener('touchstart', handleTouch);
-
-    // Reset Game Function
-    const resetGame = () => {
-      player.y = 200;
+    const resetLevel = (newLevel: boolean) => {
+      player.y = groundLevel - 100;
       player.dy = 0;
+      player.jumpCount = 0;
+      player.invulnerable = 0;
       obstacles = [];
-      // Initial platform
+      enemies = [];
+      projectiles = [];
+      tpPlatform = null;
+
       obstacles.push({
         x: 50,
-        y: 400,
-        width: 200,
-        height: 600,
+        y: groundLevel,
+        width: 600,
+        height: canvas.height,
         color: '#22c55e',
         type: 'candle'
       });
-      currentScore = 0;
+
       frames = 0;
-      gameSpeed = 5;
-      setScore(0);
+      distanceTraveled = 0;
+
+      if (newLevel) {
+        // Keep Score
+      } else {
+        // Reset completely logic happens via React state setters mostly, 
+        // here we just reset local loop vars
+        currentScore = 0;
+        gameSpeed = 6;
+        currentTargetDistance = 2000;
+        // Lives reset handled by effect deps or caller
+        // Ensure local lives matches React state
+        currentLives = lives;
+      }
     };
 
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (['Space', 'ArrowUp', 'ArrowDown'].includes(e.code)) e.preventDefault();
+
+      if (e.code === 'Space' || e.code === 'ArrowUp') {
+        if (gameState === 'start' || gameState === 'gameover') {
+          if (gameState === 'start') {
+            resetLevel(false);
+            setGameState('playing');
+          }
+          // gameover handled by button usually
+        } else if (gameState === 'levelcomplete') {
+          // handled by button
+        } else if (player.grounded || player.jumpCount < 2) {
+          player.dy = -player.jumpStrength;
+          player.grounded = false;
+          player.jumpCount++;
+        }
+      }
+    };
+
+    const handleTouch = (e: TouchEvent) => {
+      e.preventDefault();
+      if (gameState === 'start') {
+        resetLevel(false);
+        setGameState('playing');
+      } else if (player.grounded || player.jumpCount < 2) {
+        player.dy = -player.jumpStrength;
+        player.grounded = false;
+        player.jumpCount++;
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    canvas.addEventListener('touchstart', handleTouch, { passive: false });
+
     if (gameState === 'playing') {
-      // Game Loop
       const update = () => {
         frames++;
-        
-        // Clear Canvas
-        ctx.fillStyle = '#111827'; // Dark bg
+        distanceTraveled += gameSpeed;
+        if (frames % 10 === 0) setLevelProgress(distanceTraveled);
+
+        // Background
+        ctx.fillStyle = '#111827';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        // Grid
+        ctx.strokeStyle = '#1f2937';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        const gridSize = 100;
+        const offset = distanceTraveled % gridSize;
+        for (let x = -offset; x < canvas.width; x += gridSize) {
+          ctx.moveTo(x, 0); ctx.lineTo(x, canvas.height);
+        }
+        for (let y = 0; y < canvas.height; y += gridSize) {
+          ctx.moveTo(0, y); ctx.lineTo(canvas.width, y);
+        }
+        ctx.stroke();
 
         // Player Physics
         player.dy += player.gravity;
         player.y += player.dy;
         player.grounded = false;
+        if (player.invulnerable > 0) player.invulnerable--;
 
-        // Generate Obstacles (Candles)
-        // Ensure there's always a path
+        // Obstacle Spawning
         const lastObstacle = obstacles[obstacles.length - 1];
-        if (lastObstacle.x < canvas.width) {
-          const gap = Math.random() * 150 + 50; // Random gap
-          const width = Math.random() * 100 + 50;
-          // Varying height for candles. Y is top position.
-          // Canvas height is approx 600.
-          // Ground level varies.
-          const y = Math.random() * 200 + 300; 
-          
-          const isGreen = Math.random() > 0.4; // More green than red
-          
-          obstacles.push({
-            x: lastObstacle.x + lastObstacle.width + gap,
-            y: y,
-            width: width,
-            height: 600, // Extend to bottom
-            color: isGreen ? '#22c55e' : '#ef4444',
-            type: 'candle'
-          });
+        if (lastObstacle && lastObstacle.x < canvas.width + 100 && !tpPlatform) {
+          if (distanceTraveled >= currentTargetDistance) {
+            // Spawn TP Platform logic - HUGE GREEN PLATFORM
+            tpPlatform = {
+              x: lastObstacle.x + lastObstacle.width + 100, // Small gap
+              y: canvas.height * 0.6, // Accessible height
+              width: 500,
+              height: canvas.height,
+              type: 'tp_platform'
+            };
+          } else {
+            // Balancing for Modes
+            let gap, yVar;
+            if (gameMode === 'hardcore') {
+              gap = Math.random() * 140 + 50; // Reduced gap for Hardcore (Easier jumps since 1 life)
+              yVar = 220; // Reduced verticality
+            } else {
+              gap = Math.random() * 180 + 70; // Standard
+              yVar = 300;
+            }
 
-          // Chance to spawn Bank Enemy on top
-          if (Math.random() < 0.3) {
-             obstacles.push({
-                 x: lastObstacle.x + lastObstacle.width + gap + (width/2) - 20,
-                 y: y - 50, // Floating above candle
-                 width: 40,
-                 height: 40,
-                 type: 'bank'
-             })
+            const width = Math.random() * 120 + 40;
+            const lastY = lastObstacle.y;
+            let y = lastY + (Math.random() * yVar - (yVar / 2));
+
+            if (y < canvas.height * 0.25) y = canvas.height * 0.25;
+            if (y > canvas.height * 0.85) y = canvas.height * 0.85;
+
+            const isGreen = Math.random() > 0.45;
+
+            obstacles.push({
+              x: lastObstacle.x + lastObstacle.width + gap,
+              y: y,
+              width: width,
+              height: canvas.height,
+              color: isGreen ? '#22c55e' : '#ef4444',
+              type: 'candle'
+            });
+
+            if (Math.random() < (0.015 + (level * 0.005))) {
+              enemies.push({
+                x: canvas.width + 100,
+                y: y - 250 - Math.random() * 100,
+                width: 45,
+                height: 45,
+                type: 'drone',
+                startY: y - 250,
+                offset: Math.random() * 100
+              });
+            }
           }
         }
 
         // Update Obstacles
         for (let i = obstacles.length - 1; i >= 0; i--) {
-          let obs = obstacles[i];
+          const obs = obstacles[i];
           obs.x -= gameSpeed;
 
-          // Draw Obstacle
-          if (obs.type === 'candle') {
-            const candle = obs as Candle;
-            ctx.fillStyle = candle.color;
-            ctx.fillRect(candle.x, candle.y, candle.width, candle.height);
-            // Wick
-            ctx.fillStyle = candle.color;
-            ctx.fillRect(candle.x + candle.width/2 - 2, candle.y - 15, 4, 15);
-          } else if (obs.type === 'bank') {
-              // Draw Bank (Enemy)
-              ctx.fillStyle = '#64748b'; // Slate 500
-              ctx.fillRect(obs.x, obs.y, obs.width, obs.height);
-              // Bank Text
-              ctx.fillStyle = 'white';
-              ctx.font = '10px Arial';
-              ctx.fillText('BANK', obs.x + 5, obs.y + 25);
-          }
+          ctx.fillStyle = obs.color;
+          ctx.fillRect(obs.x, obs.y, obs.width, obs.height);
+          ctx.fillStyle = '#fff';
+          ctx.fillRect(obs.x + obs.width / 2 - 1, obs.y - 20, 2, 20); // Wick
 
-          // Collision Detection
           if (
             player.x < obs.x + obs.width &&
             player.x + player.width > obs.x &&
             player.y < obs.y + obs.height &&
             player.y + player.height > obs.y
           ) {
-            
-            if (obs.type === 'candle') {
-                 // Collision with candle (platform)
-                // Check if landing on top
-                if (player.dy > 0 && player.y + player.height - player.dy <= obs.y + 10) {
-                    player.grounded = true;
-                    player.dy = 0;
-                    player.y = obs.y - player.height;
-                } else {
-                    // Hit side or bottom -> Game Over
-                     setGameState('gameover');
-                }
-            } else if (obs.type === 'bank') {
-                // Hit enemy
-                setGameState('gameover');
+            if (player.dy > 0 && player.y + player.height - player.dy <= obs.y + 25) {
+              player.grounded = true;
+              player.dy = 0;
+              player.y = obs.y - player.height;
+              player.jumpCount = 0;
+            } else {
+              if (player.x + player.width > obs.x && player.x < obs.x + 10) {
+                player.x = obs.x - player.width;
+              }
             }
           }
 
-          // Remove off-screen
-          if (obs.x + obs.width < 0) {
+          if (obs.x + obs.width < -100) {
             obstacles.splice(i, 1);
-            currentScore += 10;
+            currentScore += 15;
             setScore(currentScore);
-            gameSpeed += 0.005; // Slowly increase speed
           }
         }
 
-        // Player Bounds (Fall off)
+        // Update Enemies
+        for (let i = enemies.length - 1; i >= 0; i--) {
+          const drone = enemies[i];
+          drone.x -= gameSpeed * 1.3;
+          drone.y = drone.startY + Math.sin((frames + drone.offset) * 0.08) * 80;
+
+          ctx.fillStyle = '#ef4444';
+          ctx.fillRect(drone.x, drone.y, drone.width, drone.height);
+          ctx.fillStyle = '#e5e7eb';
+          ctx.fillRect(drone.x - 15, drone.y - 8, 75, 4);
+
+          if (frames % (100 - Math.min(50, level * 5)) === 0) {
+            if (drone.x > 0 && drone.x < canvas.width) spawnProjectile(drone);
+          }
+
+          if (player.invulnerable === 0 &&
+            player.x < drone.x + drone.width &&
+            player.x + player.width > drone.x &&
+            player.y < drone.y + drone.height &&
+            player.y + player.height > drone.y
+          ) {
+            currentLives--;
+            setLives(currentLives);
+            player.invulnerable = 120;
+            if (currentLives <= 0) setGameState('gameover');
+          }
+
+          if (drone.x + drone.width < -100) enemies.splice(i, 1);
+        }
+
+        // Update Projectiles
+        for (let i = projectiles.length - 1; i >= 0; i--) {
+          const proj = projectiles[i];
+          proj.x += proj.dx;
+          proj.y += proj.dy;
+
+          ctx.fillStyle = '#fff';
+          ctx.font = 'bold 16px "Arial Black"';
+          ctx.fillText('SL', proj.x, proj.y);
+
+          if (player.invulnerable === 0 &&
+            player.x < proj.x + proj.width &&
+            player.x + player.width > proj.x &&
+            player.y < proj.y + proj.height &&
+            player.y + player.height > proj.y
+          ) {
+            currentLives--;
+            setLives(currentLives);
+            player.invulnerable = 120;
+            projectiles.splice(i, 1);
+            if (currentLives <= 0) setGameState('gameover');
+            continue;
+          }
+
+          if (proj.x < 0 || proj.y > canvas.height || proj.y < 0) projectiles.splice(i, 1);
+        }
+
+        // Update TP Platform
+        if (tpPlatform) {
+          tpPlatform.x -= gameSpeed;
+
+          // Draw Green Platform
+          ctx.fillStyle = '#22c55e'; // Green
+          ctx.shadowColor = '#22c55e';
+          ctx.shadowBlur = 20;
+          ctx.fillRect(tpPlatform.x, tpPlatform.y, tpPlatform.width, tpPlatform.height);
+          ctx.shadowBlur = 0;
+
+          // TP Line/Goal
+          ctx.fillStyle = '#facc15'; // Gold Line
+          ctx.fillRect(tpPlatform.x + 200, tpPlatform.y - 150, 10, 150);
+          ctx.fillStyle = '#fff';
+          ctx.font = 'bold 30px Arial';
+          ctx.fillText('FINISH / TP', tpPlatform.x + 150, tpPlatform.y - 170);
+
+          // Collision
+          if (
+            player.x < tpPlatform.x + tpPlatform.width &&
+            player.x + player.width > tpPlatform.x &&
+            player.y < tpPlatform.y + tpPlatform.height &&
+            player.y + player.height > tpPlatform.y
+          ) {
+            if (player.dy > 0 && player.y + player.height - player.dy <= tpPlatform.y + 25) {
+              player.grounded = true;
+              player.dy = 0;
+              player.y = tpPlatform.y - player.height;
+              player.jumpCount = 0;
+            }
+          }
+
+          // Win Condition: Cross the line
+          if (player.x > tpPlatform.x + 200) {
+            setGameState('levelcomplete');
+          }
+        }
+
+        // Player Fall
         if (player.y > canvas.height) {
-          setGameState('gameover');
+          currentLives--;
+          setLives(currentLives);
+          if (currentLives <= 0) {
+            setGameState('gameover');
+          } else {
+            player.y = 0;
+            player.dy = 0;
+            player.invulnerable = 120;
+          }
+        }
+
+        // Wall Death
+        if (player.x + player.width < 0) {
+          currentLives--;
+          setLives(currentLives);
+          if (currentLives <= 0) {
+            setGameState('gameover');
+          } else {
+            player.x = 100;
+            player.y = 0;
+            player.invulnerable = 120;
+          }
         }
 
         // Draw Player
-        ctx.fillStyle = player.color;
-        
-        ctx.fillRect(player.x, player.y, player.width, player.height);
-        // Draw Eyes (Mario style)
-        ctx.fillStyle = 'white';
-        ctx.fillRect(player.x + 25, player.y + 10, 8, 8);
-
-
-        // Score
-        ctx.fillStyle = 'white';
-        ctx.font = '20px sans-serif';
-        ctx.fillText(`P&L: $${currentScore}`, canvas.width - 150, 40);
+        if (player.invulnerable % 10 < 5) {
+          ctx.fillStyle = player.color;
+          ctx.fillRect(player.x, player.y, player.width, player.height);
+          ctx.fillStyle = '#fff';
+          ctx.fillRect(player.x + 28, player.y + 10, 6, 6);
+        }
 
         animationFrameId = requestAnimationFrame(update);
       };
-      
       update();
     } else {
-       // Draw static screen or initial state
-       ctx.fillStyle = '#111827';
-       ctx.fillRect(0, 0, canvas.width, canvas.height);
-       
-       ctx.fillStyle = 'white';
-       ctx.font = '30px sans-serif';
-       ctx.textAlign = 'center';
-       if (gameState === 'start') {
-           ctx.fillText("FullMargin Trader", canvas.width/2, canvas.height/2 - 20);
-           ctx.font = '16px sans-serif';
-           ctx.fillText("Press Space or Click to Start", canvas.width/2, canvas.height/2 + 20);
-       } else if (gameState === 'gameover') {
-           ctx.fillText("LIQUIDATED", canvas.width/2, canvas.height/2 - 20);
-           ctx.font = '20px sans-serif';
-           ctx.fillText(`Final P&L: $${score}`, canvas.width/2, canvas.height/2 + 20);
-       }
+      // Menu or BG rendering
+      ctx.fillStyle = '#000';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
     }
 
     return () => {
@@ -260,28 +448,172 @@ export default function TradingGame() {
       canvas.removeEventListener('touchstart', handleTouch);
       cancelAnimationFrame(animationFrameId);
     };
-  }, [gameState]);
+  }, [gameState, level, gameMode]); // Dep on gameMode so lives correct on reset
+
+  const nextLevel = () => {
+    setLevel(l => l + 1);
+    setTargetDistance(d => d + 800);
+    if (gameMode === 'standard') setLives(3); // Regenerate Lives
+    setGameState('playing');
+  };
 
   return (
-    <div className="relative flex flex-col items-center justify-center p-4">
-      <canvas
-        ref={canvasRef}
-        width={800}
-        height={600}
-        className="border-4 border-slate-700 rounded-lg shadow-2xl bg-gray-900 max-w-full"
-        onClick={() => gameState === 'start' && setGameState('playing')}
-      />
-      {gameState === 'gameover' && (
-        <button
-          onClick={() => setGameState('start')}
-          className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 mt-20 px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white font-bold rounded-lg shadow-lg transition"
-        >
-          Recommencer (Trade Again)
-        </button>
+    <div className="relative w-full h-full overflow-hidden font-mono select-none bg-black text-white touch-none">
+      <canvas ref={canvasRef} className="block w-full h-full" />
+
+      {/* HUD */}
+      {gameState === 'playing' && (
+        <div className="absolute top-0 left-0 w-full p-4 md:p-6 pointer-events-none">
+          <div className="flex justify-between items-end border-b-2 border-slate-700/50 pb-2 md:pb-4">
+            <div className="flex flex-col">
+              <span className="text-[10px] md:text-xs text-slate-400 uppercase tracking-widest">Level Progress</span>
+              <div className="w-32 md:w-64 h-2 bg-slate-800 mt-1 relative overflow-hidden">
+                <div
+                  className="absolute top-0 left-0 h-full bg-blue-500"
+                  style={{ width: `${Math.min(100, (levelProgress / targetDistance) * 100)}%` }}
+                />
+              </div>
+            </div>
+
+            {/* Lives */}
+            {gameMode === 'standard' && (
+              <div className="flex gap-1 text-lg md:text-2xl">
+                {Array.from({ length: Math.max(0, lives) }).map((_, i) => <span key={i}>❤️</span>)}
+              </div>
+            )}
+
+            <div className="text-right">
+              <div className="text-2xl md:text-4xl font-bold">${score}</div>
+              <div className="text-[10px] md:text-xs text-green-400 uppercase tracking-widest">
+                P&L • Level {level}
+              </div>
+            </div>
+          </div>
+          {gameMode === 'hardcore' && (
+            <div className="absolute top-16 md:top-20 right-4 md:right-6 text-[10px] md:text-sm text-red-500 font-bold bg-black/50 px-2 py-1 rounded border border-red-500/30">
+              HARDCORE
+            </div>
+          )}
+        </div>
       )}
-      <div className="mt-4 text-slate-300 text-sm">
-        <p>Espace / Click pour sauter. Évitez les Banques !</p>
-      </div>
+
+      {/* Main Menu */}
+      {gameState === 'menu' && (
+        <div className="absolute inset-0 flex items-center justify-center bg-black pointer-events-auto z-50 overflow-y-auto">
+          <div className="absolute inset-0 opacity-20" style={{ backgroundImage: 'radial-gradient(#333 1px, transparent 1px)', backgroundSize: '20px 20px' }}></div>
+
+          <div className="text-center relative z-10 w-full max-w-4xl px-4 py-8">
+            <div className="mb-4 md:mb-8">
+              <img src="/logo.png" alt="Logo" className="w-24 h-24 md:w-40 md:h-40 mx-auto object-contain animate-pulse-slow drop-shadow-[0_0_20px_rgba(255,255,255,0.2)]" />
+            </div>
+            <h1 className="text-4xl md:text-7xl font-black mb-2 tracking-tighter">FULL<span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-500 to-purple-500">MARGIN</span></h1>
+            <p className="text-gray-400 tracking-[0.2em] md:tracking-[0.3em] uppercase mb-8 md:mb-16 text-xs md:text-base">High Volatility Survival</p>
+
+            <div className="flex flex-col md:flex-row gap-4 md:gap-8 justify-center items-center">
+              <button
+                onClick={() => selectMode('standard')}
+                className="group w-full max-w-xs md:w-80 p-6 md:p-8 border border-gray-600 hover:border-green-400 hover:bg-green-900/10 transition-all rounded-xl relative overflow-hidden"
+              >
+                <h3 className="text-2xl md:text-3xl font-black mb-2 text-green-400">STANDARD</h3>
+                <div className="h-px w-full bg-gray-700 my-2 md:my-4 group-hover:bg-green-500/50"></div>
+                <p className="text-xs md:text-sm text-gray-300 mb-1">3 Lives System</p>
+                <p className="text-xs md:text-sm text-gray-300 mb-1">Forgiving Mechanics</p>
+                <p className="text-[10px] md:text-xs text-gray-500 mt-4 uppercase tracking-widest">Recommended for Learners</p>
+              </button>
+
+              <button
+                onClick={() => selectMode('hardcore')}
+                className="group w-full max-w-xs md:w-80 p-6 md:p-8 border border-gray-600 hover:border-red-500 hover:bg-red-900/10 transition-all rounded-xl relative overflow-hidden"
+              >
+                <h3 className="text-2xl md:text-3xl font-black mb-2 text-red-500">FULL MARGIN</h3>
+                <div className="h-px w-full bg-gray-700 my-2 md:my-4 group-hover:bg-red-500/50"></div>
+                <p className="text-xs md:text-sm text-gray-300 mb-1">1 Life Only</p>
+                <p className="text-xs md:text-sm text-gray-300 mb-1">No Second Chances</p>
+                <p className="text-[10px] md:text-xs text-gray-500 mt-4 uppercase tracking-widest">High Risk / High Reward</p>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Start Confirmation */}
+      {gameState === 'start' && (
+        <div className="absolute inset-0 flex items-center justify-center bg-black/80 z-40 pointer-events-auto backdrop-blur-sm px-4">
+          <div className="text-center animate-fade-in-up p-8 md:p-12 border border-white/10 bg-black/80 rounded-2xl w-full max-w-md">
+            <h2 className="text-2xl md:text-4xl font-bold mb-4 uppercase text-white">
+              {gameMode === 'standard' ? <span className="text-green-400">Standard Protocol</span> : <span className="text-red-500">Full Margin Logic</span>}
+            </h2>
+            <p className="text-gray-400 mb-8 tracking-widest font-mono text-xs md:text-sm">
+              {gameMode === 'standard' ? 'SYSTEM CHECK: STOPS ACTIVE. HEDGING ENABLED.' : 'WARNING: LIQUIDATION IMMINENT. NO STOPS.'}
+            </p>
+            <button
+              onClick={() => setGameState('playing')}
+              className="w-full px-8 py-4 bg-white text-black font-bold uppercase tracking-widest hover:bg-blue-500 hover:text-white transition shadow-[0_0_20px_rgba(255,255,255,0.2)] text-sm md:text-base"
+            >
+              Execute Order
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Game Over */}
+      {gameState === 'gameover' && (
+        <div className="absolute inset-0 flex items-center justify-center bg-red-950/90 z-50 pointer-events-auto px-4">
+          <div className="text-center p-8 md:p-12 bg-black border border-red-800 shadow-[0_0_50px_rgba(220,38,38,0.5)] max-w-xl w-full">
+            <h2 className="text-5xl md:text-8xl font-black text-red-600 mb-4 uppercase tracking-tighter">LIQUIDATED</h2>
+            <p className="text-gray-400 mb-6 md:mb-10 uppercase tracking-widest border-b border-red-900/50 pb-4 text-sm md:text-base">Account Balance Zeroed</p>
+
+            <div className="grid grid-cols-2 gap-4 md:gap-8 mb-6 md:mb-10">
+              <div className="bg-red-900/10 p-2 md:p-4 rounded">
+                <span className="block text-[10px] md:text-xs uppercase text-gray-500 mb-1 md:mb-2">Final P&L</span>
+                <span className="text-xl md:text-3xl font-bold text-white">${score}</span>
+              </div>
+              <div className="bg-red-900/10 p-2 md:p-4 rounded">
+                <span className="block text-[10px] md:text-xs uppercase text-gray-500 mb-1 md:mb-2">Highest Level</span>
+                <span className="text-xl md:text-3xl font-bold text-white">{level}</span>
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-3 md:gap-4">
+              <button
+                onClick={() => {
+                  setGameState('playing');
+                  setLives(gameMode === 'standard' ? 3 : 1);
+                  setScore(0);
+                  setLevel(1);
+                }}
+                className="w-full py-3 md:py-4 bg-white text-black font-bold uppercase tracking-widest hover:bg-red-500 hover:text-white transition text-xs md:text-sm"
+              >
+                Re-Deposit (Retry)
+              </button>
+              <button
+                onClick={returnToMenu}
+                className="w-full py-3 md:py-4 border border-zinc-700 text-zinc-400 font-bold uppercase tracking-widest hover:border-white hover:text-white transition text-xs md:text-sm"
+              >
+                Return to Menu
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Level Complete */}
+      {gameState === 'levelcomplete' && (
+        <div className="absolute inset-0 flex items-center justify-center bg-yellow-900/90 z-50 pointer-events-auto backdrop-blur-sm px-4">
+          <div className="text-center p-8 md:p-12 bg-black/90 border border-yellow-500/50 shadow-2xl w-full max-w-lg">
+            <h2 className="text-4xl md:text-6xl font-black text-yellow-500 mb-4">TAKE PROFIT HIT</h2>
+            <p className="text-base md:text-xl text-white mb-8">Volatility increasing for Zone {level + 1}...</p>
+            <button
+              onClick={nextLevel}
+              className="w-full px-8 py-4 bg-yellow-500 text-black font-bold uppercase tracking-widest hover:bg-yellow-400 shadow-lg hover:scale-105 transition text-sm md:text-base"
+            >
+              Next Level
+            </button>
+          </div>
+        </div>
+      )}
+
     </div>
   );
+}
 }
