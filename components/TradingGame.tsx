@@ -525,6 +525,7 @@ export default function TradingGame() {
     setTargetDistance(d => d + 800);
     if (gameMode === 'standard') setLives(3); // Regenerate Lives
     setCheckpointReached(false);
+    setLevelProgress(0); // Reset progress for new level
     setGameState('playing');
   };
 
@@ -679,6 +680,8 @@ export default function TradingGame() {
                   setLives(gameMode === 'standard' ? 3 : 1);
                   setScore(0);
                   setLevel(1);
+                  setCheckpointReached(false); // Reset checkpoint on full loss
+                  setLevelProgress(0); // Reset progress
                 }}
                 className="w-full py-3 md:py-4 bg-white text-black font-bold uppercase tracking-widest hover:bg-red-500 hover:text-white transition text-xs md:text-sm"
               >
