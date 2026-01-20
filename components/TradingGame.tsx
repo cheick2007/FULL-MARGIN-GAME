@@ -15,6 +15,10 @@ export default function TradingGame() {
   const [levelProgress, setLevelProgress] = useState(0);
   const [targetDistance, setTargetDistance] = useState(1000);
 
+  // New Settings
+  const [speedSetting, setSpeedSetting] = useState(5); // Default 5
+  const [checkpointReached, setCheckpointReached] = useState(false);
+
   // Initialize Game Mode
   const selectMode = (mode: GameMode) => {
     setGameMode(mode);
@@ -27,6 +31,7 @@ export default function TradingGame() {
     setGameState('menu');
     setLevel(1);
     setScore(0);
+    setCheckpointReached(false);
   };
 
   useEffect(() => {
@@ -54,12 +59,13 @@ export default function TradingGame() {
 
     // Variables
     let animationFrameId: number;
+    let animationFrameId: number;
     let frames = 0;
-    // Slower Speed
-    let gameSpeed = 5 + (level * 0.4);
+    // Slower Speed base + adjustment
+    let gameSpeed = speedSetting + (level * 0.4);
     let currentScore = score;
     let currentLives = lives;
-    let distanceTraveled = 0;
+    let distanceTraveled = levelProgress; // Init from state for checkpoint sync
 
     const levelLength = 2000 + (level * 800);
     let currentTargetDistance = levelLength;
@@ -93,19 +99,26 @@ export default function TradingGame() {
     let enemies: Drone[] = [];
     let projectiles: Projectile[] = [];
     let tpPlatform: TPPlatform | null = null;
+    let localCheckpointReached = checkpointReached; // Sync with state
 
-    // Initial Platform
-    const groundLevel = logicalHeight * 0.75;
-    obstacles.push({
-      x: 50,
-      y: groundLevel,
-      width: 600,
-      height: logicalHeight,
-      color: '#22c55e',
-      type: 'candle'
-    });
+    // Initial Platform function
+    const spawnSafePlatform = (xPos: number) => {
+      const groundLevel = logicalHeight * 0.75;
+      obstacles.push({
+        x: xPos,
+        y: groundLevel,
+        width: 600,
+        height: logicalHeight,
+        color: '#22c55e',
+        type: 'candle'
+      });
+      player.y = groundLevel - 100;
+      player.x = xPos + 50;
+      player.dy = 0;
+    };
 
-    player.y = groundLevel - 100;
+    // Initial Spawn
+    if (obstacles.length === 0) spawnSafePlatform(50);
 
     const spawnProjectile = (drone: Drone) => {
       projectiles.push({
@@ -119,8 +132,34 @@ export default function TradingGame() {
       });
     };
 
+    // Respawn / Reset
+    const respawnAtCheckpoint = () => {
+      obstacles = [];
+      enemies = [];
+      projectiles = [];
+      tpPlatform = null;
+      player.dy = 0;
+      player.jumpCount = 0;
+      player.invulnerable = 120; // Safety frames
+
+      if (gameMode === 'standard') {
+        if (localCheckpointReached) {
+          // Respawn at Middle
+          distanceTraveled = currentTargetDistance / 2;
+          spawnSafePlatform(100);
+        } else {
+          // Respawn at Start
+          distanceTraveled = 0;
+          spawnSafePlatform(50);
+        }
+      } else {
+        // Hardcore - shouldn't happen usually as life=1, but if we reuse logic
+        distanceTraveled = 0;
+        spawnSafePlatform(50);
+      }
+    };
+
     const resetLevel = (newLevel: boolean) => {
-      player.y = groundLevel - 100;
       player.dy = 0;
       player.jumpCount = 0;
       player.invulnerable = 0;
@@ -128,29 +167,21 @@ export default function TradingGame() {
       enemies = [];
       projectiles = [];
       tpPlatform = null;
-
-      obstacles.push({
-        x: 50,
-        y: groundLevel,
-        width: 600,
-        height: logicalHeight,
-        color: '#22c55e',
-        type: 'candle'
-      });
+      localCheckpointReached = false;
+      setCheckpointReached(false);
 
       frames = 0;
       distanceTraveled = 0;
+      setLevelProgress(0);
+
+      spawnSafePlatform(50);
 
       if (newLevel) {
         // Keep Score
       } else {
-        // Reset completely logic happens via React state setters mostly, 
-        // here we just reset local loop vars
         currentScore = 0;
-        gameSpeed = 5;
+        gameSpeed = speedSetting;
         currentTargetDistance = 2000;
-        // Lives reset handled by effect deps or caller
-        // Ensure local lives matches React state
         currentLives = lives;
       }
     };
@@ -161,7 +192,8 @@ export default function TradingGame() {
       if (e.code === 'Space' || e.code === 'ArrowUp') {
         if (gameState === 'start' || gameState === 'gameover') {
           if (gameState === 'start') {
-            resetLevel(false);
+            // Reset done via effect mostly, but ensure clean start
+            respawnAtCheckpoint(); // Uses state 0 usually
             setGameState('playing');
           }
           // gameover handled by button usually
@@ -181,7 +213,7 @@ export default function TradingGame() {
       if (e.cancelable) e.preventDefault();
 
       if (gameState === 'start') {
-        resetLevel(false);
+        respawnAtCheckpoint();
         setGameState('playing');
       } else if (player.grounded || player.jumpCount < 2) {
         player.dy = -player.jumpStrength;
@@ -198,6 +230,12 @@ export default function TradingGame() {
         frames++;
         distanceTraveled += gameSpeed;
         if (frames % 10 === 0) setLevelProgress(distanceTraveled);
+
+        // Checkpoint Logic (Standard Mode)
+        if (gameMode === 'standard' && !localCheckpointReached && distanceTraveled > currentTargetDistance / 2) {
+          localCheckpointReached = true;
+          setCheckpointReached(true);
+        }
 
         // Apply Scale for Mobile Loop
         ctx.setTransform(viewScale, 0, 0, viewScale, 0, 0);
@@ -230,6 +268,7 @@ export default function TradingGame() {
         // Obstacle Spawning
         const lastObstacle = obstacles[obstacles.length - 1];
         if (lastObstacle && lastObstacle.x < logicalWidth + 100 && !tpPlatform) {
+
           if (distanceTraveled >= currentTargetDistance) {
             // Spawn TP Platform logic - HUGE GREEN PLATFORM
             tpPlatform = {
@@ -250,6 +289,9 @@ export default function TradingGame() {
               yVar = 300;
             }
 
+            // Checkpoint Marker Object
+            const isCheckpointZone = gameMode === 'standard' && Math.abs(distanceTraveled - (currentTargetDistance / 2)) < 500;
+
             const width = Math.random() * 120 + 40;
             const lastY = lastObstacle.y;
             let y = lastY + (Math.random() * yVar - (yVar / 2));
@@ -258,13 +300,18 @@ export default function TradingGame() {
             if (y > logicalHeight * 0.85) y = logicalHeight * 0.85;
 
             const isGreen = Math.random() > 0.45;
+            let color = isGreen ? '#22c55e' : '#ef4444';
+
+            if (isCheckpointZone && !localCheckpointReached) {
+              color = '#3b82f6'; // Blue for Checkpoint
+            }
 
             obstacles.push({
               x: lastObstacle.x + lastObstacle.width + gap,
               y: y,
               width: width,
               height: logicalHeight,
-              color: isGreen ? '#22c55e' : '#ef4444',
+              color: color,
               type: 'candle'
             });
 
@@ -303,6 +350,12 @@ export default function TradingGame() {
               player.dy = 0;
               player.y = obs.y - player.height;
               player.jumpCount = 0;
+
+              if (obs.color === '#3b82f6' && !localCheckpointReached && gameMode === 'standard') {
+                localCheckpointReached = true;
+                setCheckpointReached(true);
+              }
+
             } else {
               if (player.x + player.width > obs.x && player.x < obs.x + 10) {
                 player.x = obs.x - player.width;
@@ -420,9 +473,12 @@ export default function TradingGame() {
           if (currentLives <= 0) {
             setGameState('gameover');
           } else {
-            player.y = 0;
-            player.dy = 0;
-            player.invulnerable = 120;
+            // Standard Mode Checkpoint Respawn
+            if (gameMode === 'standard') {
+              respawnAtCheckpoint();
+            } else {
+              player.y = 0; player.dy = 0; player.invulnerable = 120;
+            }
           }
         }
 
@@ -433,9 +489,11 @@ export default function TradingGame() {
           if (currentLives <= 0) {
             setGameState('gameover');
           } else {
-            player.x = 100;
-            player.y = 0;
-            player.invulnerable = 120;
+            if (gameMode === 'standard') {
+              respawnAtCheckpoint();
+            } else {
+              player.x = 100; player.y = 0; player.invulnerable = 120;
+            }
           }
         }
 
@@ -461,12 +519,18 @@ export default function TradingGame() {
       canvas.removeEventListener('touchstart', handleTouch);
       cancelAnimationFrame(animationFrameId);
     };
-  }, [gameState, level, gameMode]); // Dep on gameMode so lives correct on reset
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      canvas.removeEventListener('touchstart', handleTouch);
+      cancelAnimationFrame(animationFrameId);
+    };
+  }, [gameState, level, gameMode, speedSetting]); // Added speedSetting dep
 
   const nextLevel = () => {
     setLevel(l => l + 1);
     setTargetDistance(d => d + 800);
     if (gameMode === 'standard') setLives(3); // Regenerate Lives
+    setCheckpointReached(false);
     setGameState('playing');
   };
 
@@ -477,14 +541,23 @@ export default function TradingGame() {
       {/* HUD */}
       {gameState === 'playing' && (
         <div className="absolute top-0 left-0 w-full p-4 md:p-6 pointer-events-none">
+          {/* Visual notification for Checkpoint */}
+          {checkpointReached && gameMode === 'standard' && (
+            <div className="absolute top-20 left-1/2 -translate-x-1/2 text-blue-500 font-bold tracking-widest animate-pulse">
+              CHECKPOINT SECURED
+            </div>
+          )}
+
           <div className="flex justify-between items-end border-b-2 border-slate-700/50 pb-2 md:pb-4">
             <div className="flex flex-col">
               <span className="text-[10px] md:text-xs text-slate-400 uppercase tracking-widest">Level Progress</span>
               <div className="w-32 md:w-64 h-2 bg-slate-800 mt-1 relative overflow-hidden">
                 <div
-                  className="absolute top-0 left-0 h-full bg-blue-500"
+                  className={`absolute top-0 left-0 h-full ${checkpointReached ? 'bg-blue-500' : 'bg-green-500'}`}
                   style={{ width: `${Math.min(100, (levelProgress / targetDistance) * 100)}%` }}
                 />
+                {/* Mid Checkpoint Marker */}
+                <div className="absolute top-0 left-1/2 w-0.5 h-full bg-white/50"></div>
               </div>
             </div>
 
@@ -521,6 +594,24 @@ export default function TradingGame() {
             </div>
             <h1 className="text-4xl md:text-7xl font-black mb-2 tracking-tighter">FULL<span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-500 to-purple-500">MARGIN</span></h1>
             <p className="text-gray-400 tracking-[0.2em] md:tracking-[0.3em] uppercase mb-8 md:mb-16 text-xs md:text-base">High Volatility Survival</p>
+
+            {/* Speed Slider */}
+            <div className="mb-8 max-w-xs mx-auto">
+              <label className="block text-gray-400 text-xs uppercase tracking-widest mb-2">Game Speed: {speedSetting}</label>
+              <input
+                type="range"
+                min="3"
+                max="10"
+                step="0.5"
+                value={speedSetting}
+                onChange={(e) => setSpeedSetting(parseFloat(e.target.value))}
+                className="w-full accent-blue-500 cursor-pointer"
+              />
+              <div className="flex justify-between text-[10px] text-gray-600 px-1">
+                <span>Slow</span>
+                <span>Fast</span>
+              </div>
+            </div>
 
             <div className="flex flex-col md:flex-row gap-4 md:gap-8 justify-center items-center">
               <button
