@@ -55,7 +55,8 @@ export default function TradingGame() {
     // Variables
     let animationFrameId: number;
     let frames = 0;
-    let gameSpeed = 6 + (level * 0.5);
+    // Slower Speed
+    let gameSpeed = 5 + (level * 0.4);
     let currentScore = score;
     let currentLives = lives;
     let distanceTraveled = 0;
@@ -63,10 +64,15 @@ export default function TradingGame() {
     const levelLength = 2000 + (level * 800);
     let currentTargetDistance = levelLength;
 
+    // Scale Logic
+    const viewScale = canvas.width < 768 ? 0.6 : 1;
+    const logicalWidth = canvas.width / viewScale;
+    const logicalHeight = canvas.height / viewScale;
+
     // Player
     const player = {
       x: 100,
-      y: canvas.height / 2,
+      y: logicalHeight / 2,
       width: 40,
       height: 40,
       dy: 0,
@@ -89,12 +95,12 @@ export default function TradingGame() {
     let tpPlatform: TPPlatform | null = null;
 
     // Initial Platform
-    const groundLevel = canvas.height * 0.75;
+    const groundLevel = logicalHeight * 0.75;
     obstacles.push({
       x: 50,
       y: groundLevel,
       width: 600,
-      height: canvas.height,
+      height: logicalHeight,
       color: '#22c55e',
       type: 'candle'
     });
@@ -127,7 +133,7 @@ export default function TradingGame() {
         x: 50,
         y: groundLevel,
         width: 600,
-        height: canvas.height,
+        height: logicalHeight,
         color: '#22c55e',
         type: 'candle'
       });
@@ -141,7 +147,7 @@ export default function TradingGame() {
         // Reset completely logic happens via React state setters mostly, 
         // here we just reset local loop vars
         currentScore = 0;
-        gameSpeed = 6;
+        gameSpeed = 5;
         currentTargetDistance = 2000;
         // Lives reset handled by effect deps or caller
         // Ensure local lives matches React state
@@ -170,7 +176,10 @@ export default function TradingGame() {
     };
 
     const handleTouch = (e: TouchEvent) => {
-      e.preventDefault();
+      // Don't prevent default everywhere to allow UI interaction if needed, 
+      // but usually nice for games
+      if (e.cancelable) e.preventDefault();
+
       if (gameState === 'start') {
         resetLevel(false);
         setGameState('playing');
@@ -190,14 +199,18 @@ export default function TradingGame() {
         distanceTraveled += gameSpeed;
         if (frames % 10 === 0) setLevelProgress(distanceTraveled);
 
+        // Apply Scale for Mobile Loop
+        ctx.setTransform(viewScale, 0, 0, viewScale, 0, 0);
+
         // Background
         ctx.fillStyle = '#111827';
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillRect(0, 0, logicalWidth, logicalHeight);
 
         // Grid
         ctx.strokeStyle = '#1f2937';
         ctx.lineWidth = 1;
         ctx.beginPath();
+
         const gridSize = 100;
         const offset = distanceTraveled % gridSize;
         for (let x = -offset; x < canvas.width; x += gridSize) {
