@@ -270,10 +270,11 @@ export default function TradingGame() {
 
           if (distanceTraveled >= currentTargetDistance) {
             // Spawn TP Platform logic - HUGE GREEN PLATFORM
+            const safeY = lastObstacle ? lastObstacle.y : logicalHeight * 0.7;
             tpPlatform = {
-              x: lastObstacle.x + lastObstacle.width + 100, // Small gap
-              y: logicalHeight * 0.6, // Accessible height
-              width: 500,
+              x: lastObstacle.x + lastObstacle.width + 50, // Reduced gap
+              y: safeY, // Align with last obstacle
+              width: 800,
               height: logicalHeight,
               type: 'tp_platform'
             };
@@ -451,7 +452,8 @@ export default function TradingGame() {
             player.y < tpPlatform.y + tpPlatform.height &&
             player.y + player.height > tpPlatform.y
           ) {
-            if (player.dy > 0 && player.y + player.height - player.dy <= tpPlatform.y + 25) {
+            // More generous collision check for the final platform
+            if (player.dy > 0 && player.y + player.height - player.dy <= tpPlatform.y + 50) {
               player.grounded = true;
               player.dy = 0;
               player.y = tpPlatform.y - player.height;
