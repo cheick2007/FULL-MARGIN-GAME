@@ -59,7 +59,6 @@ export default function TradingGame() {
 
     // Variables
     let animationFrameId: number;
-    let animationFrameId: number;
     let frames = 0;
     // Slower Speed base + adjustment
     let gameSpeed = speedSetting + (level * 0.4);
