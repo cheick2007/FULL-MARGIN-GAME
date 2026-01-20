@@ -213,11 +213,11 @@ export default function TradingGame() {
 
         const gridSize = 100;
         const offset = distanceTraveled % gridSize;
-        for (let x = -offset; x < canvas.width; x += gridSize) {
-          ctx.moveTo(x, 0); ctx.lineTo(x, canvas.height);
+        for (let x = -offset; x < logicalWidth; x += gridSize) {
+          ctx.moveTo(x, 0); ctx.lineTo(x, logicalHeight);
         }
-        for (let y = 0; y < canvas.height; y += gridSize) {
-          ctx.moveTo(0, y); ctx.lineTo(canvas.width, y);
+        for (let y = 0; y < logicalHeight; y += gridSize) {
+          ctx.moveTo(0, y); ctx.lineTo(logicalWidth, y);
         }
         ctx.stroke();
 
@@ -229,14 +229,14 @@ export default function TradingGame() {
 
         // Obstacle Spawning
         const lastObstacle = obstacles[obstacles.length - 1];
-        if (lastObstacle && lastObstacle.x < canvas.width + 100 && !tpPlatform) {
+        if (lastObstacle && lastObstacle.x < logicalWidth + 100 && !tpPlatform) {
           if (distanceTraveled >= currentTargetDistance) {
             // Spawn TP Platform logic - HUGE GREEN PLATFORM
             tpPlatform = {
               x: lastObstacle.x + lastObstacle.width + 100, // Small gap
-              y: canvas.height * 0.6, // Accessible height
+              y: logicalHeight * 0.6, // Accessible height
               width: 500,
-              height: canvas.height,
+              height: logicalHeight,
               type: 'tp_platform'
             };
           } else {
@@ -254,8 +254,8 @@ export default function TradingGame() {
             const lastY = lastObstacle.y;
             let y = lastY + (Math.random() * yVar - (yVar / 2));
 
-            if (y < canvas.height * 0.25) y = canvas.height * 0.25;
-            if (y > canvas.height * 0.85) y = canvas.height * 0.85;
+            if (y < logicalHeight * 0.25) y = logicalHeight * 0.25;
+            if (y > logicalHeight * 0.85) y = logicalHeight * 0.85;
 
             const isGreen = Math.random() > 0.45;
 
@@ -263,14 +263,14 @@ export default function TradingGame() {
               x: lastObstacle.x + lastObstacle.width + gap,
               y: y,
               width: width,
-              height: canvas.height,
+              height: logicalHeight,
               color: isGreen ? '#22c55e' : '#ef4444',
               type: 'candle'
             });
 
             if (Math.random() < (0.015 + (level * 0.005))) {
               enemies.push({
-                x: canvas.width + 100,
+                x: logicalWidth + 100,
                 y: y - 250 - Math.random() * 100,
                 width: 45,
                 height: 45,
@@ -329,7 +329,7 @@ export default function TradingGame() {
           ctx.fillRect(drone.x - 15, drone.y - 8, 75, 4);
 
           if (frames % (100 - Math.min(50, level * 5)) === 0) {
-            if (drone.x > 0 && drone.x < canvas.width) spawnProjectile(drone);
+            if (drone.x > 0 && drone.x < logicalWidth) spawnProjectile(drone);
           }
 
           if (player.invulnerable === 0 &&
@@ -371,7 +371,7 @@ export default function TradingGame() {
             continue;
           }
 
-          if (proj.x < 0 || proj.y > canvas.height || proj.y < 0) projectiles.splice(i, 1);
+          if (proj.x < 0 || proj.y > logicalHeight || proj.y < 0) projectiles.splice(i, 1);
         }
 
         // Update TP Platform
@@ -414,7 +414,7 @@ export default function TradingGame() {
         }
 
         // Player Fall
-        if (player.y > canvas.height) {
+        if (player.y > logicalHeight) {
           currentLives--;
           setLives(currentLives);
           if (currentLives <= 0) {
