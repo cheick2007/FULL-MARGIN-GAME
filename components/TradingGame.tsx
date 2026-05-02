@@ -841,7 +841,7 @@ export default function TradingGame() {
     const ctx = canvas.getContext('2d'); 
     if (!ctx) return;
 
-    // Si on est en pause, on ne lance pas la boucle de dessin (on garde l'image actuelle)    // Si on est en pause, on ne lance pas la boucle de dessin (on garde l'image actuelle)
+    // Si on est en pause, on ne lance pas la boucle de dessin
     if (isPaused) return;
 
     // --- Variables de Contrôle ---
