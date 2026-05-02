@@ -2160,10 +2160,10 @@ export default function TradingGame() {
                         <div className="p-4 bg-green-950/20 border border-green-500/20 rounded-xl text-[10px] md:text-xs text-green-400">
                             <p className="font-bold mb-2">Solution à appliquer sur Supabase :</p>
                             <ol className="list-decimal list-inside space-y-1">
-                                <li>Allez dans <b>Authentication -> Policies</b></li>
+                                <li>Allez dans <b>Authentication {'->'} Policies</b></li>
                                 <li>Créez une politique sur <b>profiles</b> et <b>transactions</b></li>
                                 <li>Action: <b>SELECT</b> / Roles: <b>authenticated</b></li>
-                                <li>Expression: <code className="bg-black px-1 rounded">auth.jwt() ->> 'email' = 'maguiragacheick2@gmail.com'</code></li>
+                                <li>Expression: <code className="bg-black px-1 rounded">auth.jwt() {'->>'} 'email' = 'maguiragacheick2@gmail.com'</code></li>
                             </ol>
                         </div>
                     </div>
