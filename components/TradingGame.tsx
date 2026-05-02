@@ -548,6 +548,7 @@ export default function TradingGame() {
 
   // Indique si le joueur a atteint le checkpoint (pour le mode Standard)
   const [checkpointReached, setCheckpointReached] = useState(false);
+  const [showCheckpointAnim, setShowCheckpointAnim] = useState(false);
 
   // --- Nouveaux États : Boutique, Skins, Gadgets, Monétisation ---
   const [totalCoins, setTotalCoins] = useState(0);
@@ -763,6 +764,17 @@ export default function TradingGame() {
         setUnlockedAchievements(newlyUnlocked);
         saveGlobalState(totalCoins, unlockedSkins, activeSkin, unlockedGadgets, activeGadget, newStats, newlyUnlocked);
     }
+    
+    // Auto-transition après 2.5 secondes
+    setTimeout(() => {
+        setGameState(current => {
+            if (current === 'levelcomplete') {
+                nextLevel();
+                return 'playing';
+            }
+            return current;
+        });
+    }, 2500);
   };
 
   const handleGameOver = () => {
@@ -850,7 +862,8 @@ export default function TradingGame() {
 
     // --- Système de Coordonnées Logiques (Game Balance) ---
     // On fixe une largeur logique de référence pour que le jeu soit identique sur tous les écrans.
-    const logicalWidth = 1000; 
+    // On fixe une largeur logique de référence (Plus petit = plus zoomé)
+    const logicalWidth = 750; 
     const dpr = window.devicePixelRatio || 1;
     // On calcule le ratio pour que 1000 unités logiques remplissent la largeur réelle de l'écran.
     const viewScale = (canvas.width / dpr) / logicalWidth; 
@@ -1152,6 +1165,8 @@ export default function TradingGame() {
               if (obs.isCheckpoint && !localCheckpointReached && gameMode === 'standard') {
                 localCheckpointReached = true;
                 setCheckpointReached(true);
+                setShowCheckpointAnim(true);
+                setTimeout(() => setShowCheckpointAnim(false), 2000);
               }
             } else {
               if (player.x + player.width > screenX && player.x < screenX + 10) {
@@ -1531,9 +1546,9 @@ export default function TradingGame() {
           </div>
 
           {/* Alertes visuelles (Checkpoint) */}
-          {checkpointReached && gameMode === 'standard' && (
+          {showCheckpointAnim && gameMode === 'standard' && (
             <div className="fixed top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 text-center animate-pulse z-50">
-              <div className="text-blue-500 text-2xl md:text-5xl font-black uppercase tracking-[0.3em] drop-shadow-[0_0_20px_rgba(59,130,246,0.6)]">
+              <div className="text-blue-500 text-3xl md:text-6xl font-black uppercase tracking-[0.3em] drop-shadow-[0_0_20px_rgba(59,130,246,0.6)]">
                 CHECKPOINT<br />SECURED
               </div>
             </div>
@@ -2068,16 +2083,20 @@ export default function TradingGame() {
 
       {/* Écran Niveau Terminé (Take Profit) */}
       {gameState === 'levelcomplete' && (
-        <div className="absolute inset-0 flex items-center justify-center bg-yellow-900/90 z-50 pointer-events-auto backdrop-blur-sm px-4">
-          <div className="text-center p-6 md:p-12 bg-black/90 border border-yellow-500/50 shadow-2xl w-full max-w-lg rounded-3xl">
-            <h2 className="text-4xl md:text-6xl font-black text-yellow-500 mb-4">TAKE PROFIT HIT</h2>
-            <p className="text-base md:text-xl text-white mb-8">Volatility increasing for Zone {level + 1}...</p>
+        <div className="absolute inset-0 flex items-center justify-center bg-yellow-900/90 z-[300] pointer-events-auto backdrop-blur-sm px-4">
+          <div className="text-center p-6 md:p-12 bg-black/90 border border-yellow-500/50 shadow-2xl w-full max-w-lg rounded-3xl animate-bounce-in">
+            <div className="w-20 h-20 bg-yellow-500/20 rounded-full flex items-center justify-center mx-auto mb-6 border border-yellow-500/30">
+                <Trophy size={40} className="text-yellow-500" />
+            </div>
+            <h2 className="text-4xl md:text-6xl font-black text-yellow-500 mb-4 tracking-tighter">TAKE PROFIT</h2>
+            <p className="text-base md:text-xl text-white font-bold mb-8 uppercase tracking-widest">Zone {level} Secured</p>
             <button
               onClick={nextLevel}
-              className="w-full px-8 py-4 bg-yellow-500 text-black font-bold uppercase tracking-widest hover:bg-yellow-400 shadow-lg hover:scale-105 transition text-sm md:text-base"
+              className="w-full px-8 py-4 bg-yellow-500 text-black font-black uppercase tracking-widest hover:bg-yellow-400 shadow-lg transition-all active:scale-95"
             >
               Next Level
             </button>
+            <p className="text-[10px] text-gray-500 mt-4 uppercase animate-pulse">Auto-transitioning...</p>
           </div>
         </div>
       )}
