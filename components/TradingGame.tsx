@@ -571,7 +571,7 @@ export default function TradingGame() {
   const [adminStats, setAdminStats] = useState({ users: 0, transactions: 0 });
   const [adminTransactionsList, setAdminTransactionsList] = useState<any[]>([]);
   const [adminUsersList, setAdminUsersList] = useState<any[]>([]);
-  
+  const [adminError, setAdminError] = useState<string | null>(null);
   // États Auth
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
@@ -604,32 +604,39 @@ export default function TradingGame() {
   }, []);
 
   const fetchAdminData = async () => {
-    console.log("Fetching admin data...");
-    // 1. Stats
-    const { count: userCount, error: uErr } = await supabase.from('profiles').select('*', { count: 'exact', head: true });
-    const { count: transCount, error: tErr } = await supabase.from('transactions').select('*', { count: 'exact', head: true });
-    
-    if (uErr) console.error("Admin: Error fetching user count", uErr);
-    
-    setAdminStats({ users: userCount || 0, transactions: transCount || 0 });
-
-    // 2. Transactions
-    const { data: transactions } = await supabase
-        .from('transactions')
-        .select('*')
-        .order('created_at', { ascending: false })
-        .limit(100);
-    setAdminTransactionsList(transactions || []);
-
-    // 3. Utilisateurs
-    const { data: users, error: lErr } = await supabase
-        .from('profiles')
-        .select('*')
-        .order('created_at', { ascending: false })
-        .limit(500); // Augmenté pour voir plus de monde
+    setAdminError(null);
+    try {
+        // 1. Stats
+        const { count: userCount, error: uErr } = await supabase.from('profiles').select('*', { count: 'exact', head: true });
+        const { count: transCount, error: tErr } = await supabase.from('transactions').select('*', { count: 'exact', head: true });
         
-    if (lErr) console.error("Admin: Error fetching users list", lErr);
-    setAdminUsersList(users || []);
+        if (uErr || tErr) {
+            setAdminError(uErr?.message || tErr?.message || "Erreur de permission");
+        }
+        
+        setAdminStats({ users: userCount || 0, transactions: transCount || 0 });
+
+        // 2. Transactions
+        const { data: transactions, error: trErr } = await supabase
+            .from('transactions')
+            .select('*')
+            .order('created_at', { ascending: false })
+            .limit(100);
+        if (trErr) console.error(trErr);
+        setAdminTransactionsList(transactions || []);
+
+        // 3. Utilisateurs
+        const { data: users, error: lErr } = await supabase
+            .from('profiles')
+            .select('*')
+            .order('created_at', { ascending: false })
+            .limit(500);
+            
+        if (lErr) console.error(lErr);
+        setAdminUsersList(users || []);
+    } catch (e: any) {
+        setAdminError(e.message);
+    }
   };
 
   const fetchLeaderboard = async () => {
@@ -787,11 +794,15 @@ export default function TradingGame() {
     setTimeout(() => {
         setGameState(current => {
             if (current === 'levelcomplete') {
-                nextLevel();
-                return 'playing';
+                // On ne peut pas appeler nextLevel ici car c'est un setter
+                // On va plutôt utiliser un effet ou un déclencheur externe
+                return 'playing'; 
             }
             return current;
         });
+        // Si on était en levelcomplete, on passe au suivant
+        // nextLevel() réinitialise les stats et change le state
+        nextLevel();
     }, 2500);
   };
 
@@ -2135,6 +2146,29 @@ export default function TradingGame() {
                     </div>
                 </div>
 
+                {/* Message d'erreur RLS / Permissions */}
+                {adminError && (
+                    <div className="mb-10 p-6 bg-red-900/20 border border-red-500/30 rounded-3xl animate-shake">
+                        <div className="flex items-center gap-3 mb-2 text-red-500">
+                            <AlertTriangle size={24} />
+                            <h3 className="font-black uppercase tracking-widest text-sm md:text-base">Alerte Sécurité Supabase</h3>
+                        </div>
+                        <p className="text-xs md:text-sm text-gray-400 mb-4">L'accès aux données est bloqué par les politiques RLS. Les tableaux sont vides car le serveur refuse de lister les données.</p>
+                        <div className="bg-black/40 p-4 rounded-xl border border-white/5 font-mono text-[10px] text-red-400 mb-4 overflow-x-auto">
+                            Status: {adminError}
+                        </div>
+                        <div className="p-4 bg-green-950/20 border border-green-500/20 rounded-xl text-[10px] md:text-xs text-green-400">
+                            <p className="font-bold mb-2">Solution à appliquer sur Supabase :</p>
+                            <ol className="list-decimal list-inside space-y-1">
+                                <li>Allez dans <b>Authentication -> Policies</b></li>
+                                <li>Créez une politique sur <b>profiles</b> et <b>transactions</b></li>
+                                <li>Action: <b>SELECT</b> / Roles: <b>authenticated</b></li>
+                                <li>Expression: <code className="bg-black px-1 rounded">auth.jwt() ->> 'email' = 'maguiragacheick2@gmail.com'</code></li>
+                            </ol>
+                        </div>
+                    </div>
+                )}
+
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     {/* Liste des Transactions */}
                     <div className="bg-zinc-900 border border-white/5 rounded-3xl p-6 md:p-8">
@@ -2179,9 +2213,9 @@ export default function TradingGame() {
                                             </td>
                                         </tr>
                                     ))}
-                                    {adminTransactionsList.length === 0 && (
+                                    {adminTransactionsList.length === 0 && !adminError && (
                                         <tr>
-                                            <td colSpan={5} className="py-20 text-center text-gray-600 italic">Aucune transaction Cloud.</td>
+                                            <td colSpan={5} className="py-20 text-center text-gray-600 italic text-sm">Aucune donnée visible. Vérifiez vos politiques RLS sur Supabase.</td>
                                         </tr>
                                     )}
                                 </tbody>
