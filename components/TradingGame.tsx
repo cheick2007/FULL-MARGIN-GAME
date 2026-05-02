@@ -606,36 +606,24 @@ export default function TradingGame() {
   const fetchAdminData = async () => {
     setAdminError(null);
     try {
-        // 1. Stats
-        const { count: userCount, error: uErr } = await supabase.from('profiles').select('*', { count: 'exact', head: true });
-        const { count: transCount, error: tErr } = await supabase.from('transactions').select('*', { count: 'exact', head: true });
-        
-        if (uErr || tErr) {
-            setAdminError(uErr?.message || tErr?.message || "Erreur de permission");
+        const res = await fetch('/api/admin', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userEmail: currentUser?.email }),
+        });
+
+        const data = await res.json();
+
+        if (!res.ok) {
+            setAdminError(data.error || `Erreur HTTP ${res.status}`);
+            return;
         }
-        
-        setAdminStats({ users: userCount || 0, transactions: transCount || 0 });
 
-        // 2. Transactions
-        const { data: transactions, error: trErr } = await supabase
-            .from('transactions')
-            .select('*')
-            .order('created_at', { ascending: false })
-            .limit(100);
-        if (trErr) console.error(trErr);
-        setAdminTransactionsList(transactions || []);
-
-        // 3. Utilisateurs
-        const { data: users, error: lErr } = await supabase
-            .from('profiles')
-            .select('*')
-            .order('created_at', { ascending: false })
-            .limit(500);
-            
-        if (lErr) console.error(lErr);
-        setAdminUsersList(users || []);
+        setAdminStats(data.stats);
+        setAdminUsersList(data.users);
+        setAdminTransactionsList(data.transactions);
     } catch (e: any) {
-        setAdminError(e.message);
+        setAdminError(e.message || 'Erreur réseau');
     }
   };
 
@@ -790,19 +778,16 @@ export default function TradingGame() {
         saveGlobalState(totalCoins, unlockedSkins, activeSkin, unlockedGadgets, activeGadget, newStats, newlyUnlocked);
     }
     
-    // Auto-transition après 2.5 secondes
-    setTimeout(() => {
+    // Auto-transition après 2.5 secondes (seulement si toujours sur l'écran levelcomplete)
+    const autoTimer = setTimeout(() => {
+        // On vérifie l'état courant via le callback du setter
         setGameState(current => {
             if (current === 'levelcomplete') {
-                // On ne peut pas appeler nextLevel ici car c'est un setter
-                // On va plutôt utiliser un effet ou un déclencheur externe
-                return 'playing'; 
+                // Déclencher nextLevel au prochain tick pour éviter la mutation dans le setter
+                queueMicrotask(() => nextLevel());
             }
-            return current;
+            return current; // On ne change pas ici, nextLevel() s'en charge
         });
-        // Si on était en levelcomplete, on passe au suivant
-        // nextLevel() réinitialise les stats et change le state
-        nextLevel();
     }, 2500);
   };
 
