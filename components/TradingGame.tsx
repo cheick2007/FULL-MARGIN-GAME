@@ -2,7 +2,23 @@
 
 // Importation des hooks React nécessaires pour la gestion d'état et du canvas
 import React, { useState, useEffect, useRef, useMemo } from 'react';
+import { 
+    Trophy, TrendingUp, Target, Shield, Zap, Gem, Crown, Star, 
+    Sword, Flame, Rocket, Activity, BarChart3, PieChart, 
+    Wallet, Coins, Key, Lock, Unlock, Heart, Skull, Ghost, 
+    Eye, Smile, Compass, Map, Flag, Anchor, ZapOff, AlertTriangle, 
+    CheckCircle2, Award, Menu, X, Settings, LogOut, ChevronRight, 
+    User, Layers, Info
+} from 'lucide-react';
 import { supabase } from '@/lib/supabase';
+
+const IconMap: { [key: string]: React.ElementType } = {
+    Trophy, TrendingUp, Target, Shield, Zap, Gem, Crown, Star, 
+    Sword, Flame, Rocket, Activity, BarChart3, PieChart, 
+    Wallet, Coins, Key, Lock, Unlock, Heart, Skull, Ghost, 
+    Eye, Smile, Compass, Map, Flag, Anchor, ZapOff, AlertTriangle, 
+    CheckCircle2, Award, User, Layers, Info
+};
 
 // Définition des types pour les modes de jeu : Standard (Vies, Checkpoints) ou Hardcore (1 Vie, Permadeath)
 type GameMode = 'standard' | 'hardcore' | null;
@@ -100,14 +116,95 @@ const GADGETS = [
     { id: 'sword_back', name: 'Épée Dorsale', price: 500, type: 'premium', desc: 'Prêt à trancher.' }
 ];
 
-// --- Système de Succès (Achievements) ---
-const ACHIEVEMENTS = [
-    { id: 'first_trade', title: { fr: 'Premier Trade', en: 'First Trade' }, desc: { fr: 'Jouez votre première partie.', en: 'Play your first game.' }, reward: 50, icon: '🚀' },
-    { id: 'risk_manager', title: { fr: 'Gestionnaire de Risque', en: 'Risk Manager' }, desc: { fr: 'Terminez un niveau en mode Standard.', en: 'Complete a level in Standard mode.' }, reward: 100, icon: '🛡️' },
-    { id: 'diamond_hands', title: { fr: 'Diamond Hands', en: 'Diamond Hands' }, desc: { fr: 'Atteignez la Zone 5.', en: 'Reach Zone 5.' }, reward: 500, icon: '💎' },
-    { id: 'hardcore_trader', title: { fr: 'Trader de l\'Extrême', en: 'Extreme Trader' }, desc: { fr: 'Atteignez la Zone 3 en mode Hardcore.', en: 'Reach Zone 3 in Hardcore mode.' }, reward: 1000, icon: '🔥' },
-    { id: 'whale_status', title: { fr: 'Statut Baleine', en: 'Whale Status' }, desc: { fr: 'Accumulez $5000 de solde total.', en: 'Accumulate $5000 total balance.' }, reward: 2000, icon: '🐋' },
-    { id: 'skin_enthusiast', title: { fr: 'Collectionneur', en: 'Collector' }, desc: { fr: 'Débloquez 5 skins différents.', en: 'Unlock 5 different skins.' }, reward: 300, icon: '🎭' },
+const ACHIEVEMENTS: any[] = [
+    // --- Unique & Legacy ---
+    {
+        id: 'first_trade',
+        title: { en: 'First Entry', fr: 'Première Entrée' },
+        desc: { en: 'Enter the market for the first time.', fr: 'Entrez sur le marché pour la première fois.' },
+        reward: 50,
+        icon: 'Activity'
+    },
+    {
+        id: 'risk_manager',
+        title: { en: 'Risk Manager', fr: 'Gestionnaire de Risque' },
+        desc: { en: 'Reach Level 2 in Standard mode.', fr: 'Atteignez le niveau 2 en mode Standard.' },
+        reward: 100,
+        icon: 'Shield'
+    },
+    {
+        id: 'diamond_hands',
+        title: { en: 'Diamond Hands', fr: 'Mains de Diamant' },
+        desc: { en: 'Reach Level 5 in any mode.', fr: 'Atteignez le niveau 5 dans n\'importe quel mode.' },
+        reward: 500,
+        icon: 'Gem'
+    },
+    {
+        id: 'hardcore_trader',
+        title: { en: 'Hardcore Trader', fr: 'Trader Hardcore' },
+        desc: { en: 'Reach Level 3 in Hardcore mode.', fr: 'Atteignez le niveau 3 en mode Hardcore.' },
+        reward: 300,
+        icon: 'Skull'
+    },
+    {
+        id: 'whale_status',
+        title: { en: 'Whale Status', fr: 'Statut de Baleine' },
+        desc: { en: 'Accumulate $5,000 P&L.', fr: 'Accumulez 5 000 $ de P&L.' },
+        reward: 1000,
+        icon: 'Coins'
+    },
+    {
+        id: 'skin_enthusiast',
+        title: { en: 'Skin Enthusiast', fr: 'Passionné de Skins' },
+        desc: { en: 'Unlock 5 different skins.', fr: 'Débloquez 5 skins différents.' },
+        reward: 250,
+        icon: 'User'
+    },
+    // --- Level Milestones (50 levels) ---
+    ...Array.from({ length: 50 }).map((_, i) => ({
+        id: `lvl_milestone_${i + 1}`,
+        title: { en: `Survivor Lvl ${i + 1}`, fr: `Survivant Niv ${i + 1}` },
+        desc: { en: `Reach level ${i + 1}.`, fr: `Atteignez le niveau ${i + 1}.` },
+        reward: (i + 1) * 10,
+        icon: 'Flag'
+    })),
+    // --- Profit Milestones (25 milestones) ---
+    ...Array.from({ length: 25 }).map((_, i) => {
+        const amount = (i + 1) * 1000;
+        return {
+            id: `profit_milestone_${amount}`,
+            title: { en: `Profit Booster $${amount}`, fr: `Boost de Profit $${amount}` },
+            desc: { en: `Reach $${amount} in P&L.`, fr: `Atteignez $${amount} de P&L.` },
+            reward: 500,
+            icon: 'TrendingUp'
+        };
+    }),
+    // --- Game Count Milestones (20 milestones) ---
+    ...Array.from({ length: 20 }).map((_, i) => {
+        const count = (i + 1) * 10;
+        return {
+            id: `games_played_${count}`,
+            title: { en: `${count} Session veteran`, fr: `Vétéran de ${count} sessions` },
+            desc: { en: `Play ${count} total games.`, fr: `Jouez un total de ${count} parties.` },
+            reward: 100,
+            icon: 'Activity'
+        };
+    }),
+    // --- Special Challenges ---
+    {
+        id: 'max_leverage',
+        title: { en: 'Max Leverage', fr: 'Levier Maximum' },
+        desc: { en: 'Accumulate $100,000 P&L.', fr: 'Accumulez 100 000 $ de P&L.' },
+        reward: 5000,
+        icon: 'Zap'
+    },
+    {
+        id: 'market_legend',
+        title: { en: 'Market Legend', fr: 'Légende du Marché' },
+        desc: { en: 'Accumulate $1,000,000 P&L.', fr: 'Accumulez 1 000 000 $ de P&L.' },
+        reward: 50000,
+        icon: 'Crown'
+    }
 ];
 
 // --- Système de Traduction ---
@@ -578,25 +675,33 @@ export default function TradingGame() {
 
   // --- Logique des Succès & Stats ---
   const checkAchievements = (currentStats: any, currentUnlocked: string[], currentCoins: number) => {
+      // Map for O(1) lookup
+      const unlockedMap = new Set(currentUnlocked);
       let newlyUnlocked = [...currentUnlocked];
       let hasChanged = false;
 
-      ACHIEVEMENTS.forEach(ach => {
-          if (newlyUnlocked.includes(ach.id)) return;
+      for (const ach of ACHIEVEMENTS) {
+          if (unlockedMap.has(ach.id)) continue;
 
           let shouldUnlock = false;
           if (ach.id === 'first_trade' && currentStats.totalGames >= 1) shouldUnlock = true;
-          if (ach.id === 'risk_manager' && currentStats.maxLevel >= 2) shouldUnlock = true;
-          if (ach.id === 'diamond_hands' && currentStats.maxLevel >= 5) shouldUnlock = true;
-          if (ach.id === 'hardcore_trader' && gameMode === 'hardcore' && currentStats.maxLevel >= 3) shouldUnlock = true;
-          if (ach.id === 'whale_status' && currentCoins >= 5000) shouldUnlock = true;
-          if (ach.id === 'skin_enthusiast' && unlockedSkins.length >= 5) shouldUnlock = true;
+          else if (ach.id === 'risk_manager' && currentStats.maxLevel >= 2) shouldUnlock = true;
+          else if (ach.id === 'diamond_hands' && currentStats.maxLevel >= 5) shouldUnlock = true;
+          else if (ach.id === 'hardcore_trader' && gameMode === 'hardcore' && currentStats.maxLevel >= 3) shouldUnlock = true;
+          else if (ach.id === 'whale_status' && currentCoins >= 5000) shouldUnlock = true;
+          else if (ach.id === 'skin_enthusiast' && unlockedSkins.length >= 5) shouldUnlock = true;
+          else if (ach.id === 'max_leverage' && currentCoins >= 100000) shouldUnlock = true;
+          else if (ach.id === 'market_legend' && currentCoins >= 1000000) shouldUnlock = true;
+          else if (ach.id.startsWith('lvl_milestone_') && currentStats.maxLevel >= parseInt(ach.id.split('_')[2])) shouldUnlock = true;
+          else if (ach.id.startsWith('profit_milestone_') && currentCoins >= parseInt(ach.id.split('_')[2])) shouldUnlock = true;
+          else if (ach.id.startsWith('games_played_') && currentStats.totalGames >= parseInt(ach.id.split('_')[2])) shouldUnlock = true;
 
           if (shouldUnlock) {
               newlyUnlocked.push(ach.id);
+              unlockedMap.add(ach.id);
               hasChanged = true;
           }
-      });
+      }
 
       return hasChanged ? newlyUnlocked : null;
   };
@@ -609,7 +714,10 @@ export default function TradingGame() {
     };
     setUserStats(newStats);
     const newlyUnlocked = checkAchievements(newStats, unlockedAchievements, totalCoins);
-    saveGlobalState(totalCoins, unlockedSkins, activeSkin, unlockedGadgets, activeGadget, newStats, newlyUnlocked || unlockedAchievements);
+    if (newlyUnlocked) {
+        setUnlockedAchievements(newlyUnlocked);
+        saveGlobalState(totalCoins, unlockedSkins, activeSkin, unlockedGadgets, activeGadget, newStats, newlyUnlocked);
+    }
   };
 
   const handleGameOver = () => {
@@ -621,7 +729,10 @@ export default function TradingGame() {
     };
     setUserStats(newStats);
     const newlyUnlocked = checkAchievements(newStats, unlockedAchievements, totalCoins);
-    saveGlobalState(totalCoins, unlockedSkins, activeSkin, unlockedGadgets, activeGadget, newStats, newlyUnlocked || unlockedAchievements);
+    if (newlyUnlocked) {
+        setUnlockedAchievements(newlyUnlocked);
+        saveGlobalState(totalCoins, unlockedSkins, activeSkin, unlockedGadgets, activeGadget, newStats, newlyUnlocked);
+    }
   };
 
   // --- Fonctions de Gestion ---
@@ -2082,11 +2193,14 @@ export default function TradingGame() {
                               {ACHIEVEMENTS.map(ach => {
                                   const isUnlocked = unlockedAchievements.includes(ach.id);
                                   const isClaimed = claimedRewards.includes(ach.id);
+                                  const IconComponent = (IconMap as any)[ach.icon] || Trophy;
                                   
                                   return (
                                       <div key={ach.id} className={`p-3 md:p-4 rounded-xl md:rounded-2xl border transition-all ${isUnlocked ? 'bg-zinc-900 border-green-500/30' : 'bg-black/40 border-white/5 opacity-60'}`}>
                                           <div className="flex items-center gap-3 md:gap-4">
-                                              <div className="text-xl md:text-2xl">{ach.icon}</div>
+                                              <div className={`p-2 rounded-lg ${isUnlocked ? 'text-green-400 bg-green-500/10' : 'text-gray-600 bg-white/5'}`}>
+                                                <IconComponent size={24} />
+                                              </div>
                                               <div className="flex-1">
                                                   <h4 className={`text-[10px] md:text-xs font-bold uppercase ${isUnlocked ? 'text-white' : 'text-gray-500'}`}>{ach.title[lang]}</h4>
                                                   <p className="text-[8px] md:text-[9px] text-gray-500">{ach.desc[lang]}</p>
