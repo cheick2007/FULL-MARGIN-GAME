@@ -587,6 +587,7 @@ export default function TradingGame() {
   const [claimedRewards, setClaimedRewards] = useState<string[]>([]);
   const [hamburgerTab, setHamburgerTab] = useState<'profile' | 'achievements' | 'settings'>('profile');
   const [userStats, setUserStats] = useState({ totalGames: 0, bestScore: 0, maxLevel: 1 });
+  const [showInstallPopup, setShowInstallPopup] = useState(false);
 
   // Effet pour charger l'utilisateur actif au démarrage
   useEffect(() => {
@@ -1619,7 +1620,7 @@ export default function TradingGame() {
                 <img src="/logo.png" alt="Logo" className="w-full h-full object-cover" />
               </div>
             </div>
-            <h1 className="text-4xl md:text-8xl font-black mb-1 md:mb-2 tracking-tighter flex items-center justify-center gap-2 md:gap-3">
+            <h1 className="text-4xl md:text-8xl font-black mt-4 md:mt-8 mb-1 md:mb-2 tracking-tighter flex items-center justify-center gap-2 md:gap-3">
               <span className="text-white">TP</span>
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-green-400 via-emerald-500 to-green-600 drop-shadow-[0_0_15px_rgba(52,211,153,0.3)]">HIT</span>
             </h1>
@@ -1689,6 +1690,12 @@ export default function TradingGame() {
                     className="w-full sm:w-auto px-8 py-3.5 bg-green-600 text-white hover:bg-green-500 transition-all rounded-2xl font-black uppercase tracking-widest text-[10px] md:text-sm shadow-xl shadow-green-500/20 flex items-center justify-center gap-2"
                 >
                     <span>🏆</span> {TRANSLATIONS[lang].leaderboard}
+                </button>
+                <button 
+                    onClick={() => setShowInstallPopup(true)}
+                    className="w-full sm:w-auto px-8 py-3.5 bg-blue-600 text-white hover:bg-blue-500 transition-all rounded-2xl font-black uppercase tracking-widest text-[10px] md:text-sm shadow-xl shadow-blue-500/20 flex items-center justify-center gap-2"
+                >
+                    <span>📲</span> {lang === 'fr' ? 'INSTALLER' : 'INSTALL APP'}
                 </button>
             </div>
 
@@ -2372,6 +2379,38 @@ export default function TradingGame() {
                   </div>
               </div>
           </div>
+      )}
+      {/* Popup Installation App */}
+      {showInstallPopup && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-[1000] flex items-center justify-center p-4 animate-fade-in">
+          <div className="bg-zinc-950 border border-white/10 rounded-[2.5rem] p-8 max-w-sm w-full shadow-2xl relative overflow-hidden">
+            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-500 via-cyan-500 to-blue-500"></div>
+            <button 
+              onClick={() => setShowInstallPopup(false)}
+              className="absolute top-6 right-6 text-gray-500 hover:text-white transition-colors"
+            >
+              <X size={24} />
+            </button>
+            
+            <div className="w-20 h-20 bg-blue-500/20 rounded-3xl flex items-center justify-center mb-6 border border-blue-500/30">
+                <img src="/logo.png" alt="App Logo" className="w-14 h-14 rounded-xl" />
+            </div>
+            
+            <h3 className="text-2xl font-black text-white mb-2 tracking-tighter uppercase">TP HIT APP</h3>
+            <p className="text-gray-400 text-sm mb-8 leading-relaxed font-bold">
+              {lang === 'fr' 
+                ? "Pour installer l'application sur votre mobile, appuyez sur 'Partager' (iOS) ou sur les trois points (Android) puis sélectionnez 'Ajouter à l'écran d'accueil'."
+                : "To install the app on your mobile, tap 'Share' (iOS) or the three dots (Android) and select 'Add to Home Screen'."}
+            </p>
+            
+            <button 
+              onClick={() => setShowInstallPopup(false)}
+              className="w-full py-4 bg-blue-600 text-white font-black uppercase tracking-widest rounded-2xl hover:bg-blue-500 transition-all shadow-xl shadow-blue-500/20 active:scale-95"
+            >
+              {lang === 'fr' ? 'COMPRIS !' : 'GOT IT !'}
+            </button>
+          </div>
+        </div>
       )}
     </div>
   );
