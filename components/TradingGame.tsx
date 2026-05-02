@@ -592,7 +592,7 @@ export default function TradingGame() {
   const [userStats, setUserStats] = useState({ totalGames: 0, bestScore: 0, maxLevel: 1 });
   const [showInstallPopup, setShowInstallPopup] = useState(false);
 
-  // Effet pour charger l'utilisateur actif au démarrage
+  // Effet pour charger l'utilisateur actif au démarrage + écouter les changements de session
   useEffect(() => {
     const checkUser = async () => {
       const { data: { user } } = await supabase.auth.getUser();
@@ -601,6 +601,19 @@ export default function TradingGame() {
       }
     };
     checkUser();
+
+    // Écouter les changements d'état d'authentification (login, logout, token refresh)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        if (event === 'SIGNED_IN' && session?.user) {
+          loadUserData(session.user.id);
+        } else if (event === 'SIGNED_OUT') {
+          setCurrentUser(null);
+        }
+      }
+    );
+
+    return () => subscription.unsubscribe();
   }, []);
 
   const fetchAdminData = async () => {
@@ -2230,25 +2243,31 @@ export default function TradingGame() {
                             Comptes Cloud Enregistrés
                         </h3>
                         
-                        <div className="overflow-y-auto max-h-[400px]">
+                        <div className="overflow-y-auto max-h-[500px]">
                             <table className="w-full text-left text-sm">
                                 <thead>
-                                    <tr className="text-gray-500 border-b border-white/5 uppercase text-[10px] tracking-widest">
+                                    <tr className="text-gray-500 border-b border-white/5 uppercase text-[10px] tracking-widest sticky top-0 bg-zinc-900">
                                         <th className="py-4 px-2">Email</th>
                                         <th className="py-4 px-2">Solde</th>
-                                        <th className="py-4 px-2">Banni</th>
+                                        <th className="py-4 px-2">Niveau Max</th>
+                                        <th className="py-4 px-2">Parties</th>
+                                        <th className="py-4 px-2">Inscrit</th>
+                                        <th className="py-4 px-2">Statut</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     {adminUsersList.map((u: any) => (
                                         <tr key={u.id} className="border-b border-white/5 hover:bg-white/[0.02]">
-                                            <td className="py-4 px-2 font-bold text-gray-300">{u.email}</td>
-                                            <td className="py-4 px-2 text-green-400 font-mono">${u.coins}</td>
+                                            <td className="py-4 px-2 font-bold text-gray-300 text-xs">{u.email}</td>
+                                            <td className="py-4 px-2 text-green-400 font-mono font-bold">${u.coins || 0}</td>
+                                            <td className="py-4 px-2 text-blue-400 font-mono">{u.metadata?.stats?.maxLevel || 1}</td>
+                                            <td className="py-4 px-2 text-gray-400 font-mono">{u.metadata?.stats?.totalGames || 0}</td>
+                                            <td className="py-4 px-2 text-[10px] text-gray-600">{u.created_at ? new Date(u.created_at).toLocaleDateString() : '-'}</td>
                                             <td className="py-4 px-2">
                                                 {u.is_banned ? (
-                                                    <span className="text-red-500 text-[10px] font-bold uppercase">Banni</span>
+                                                    <span className="text-red-500 text-[10px] font-bold uppercase bg-red-500/10 px-2 py-1 rounded-full">Banni</span>
                                                 ) : (
-                                                    <span className="text-green-500 text-[10px] font-bold uppercase">Actif</span>
+                                                    <span className="text-green-500 text-[10px] font-bold uppercase bg-green-500/10 px-2 py-1 rounded-full">Actif</span>
                                                 )}
                                             </td>
                                         </tr>
