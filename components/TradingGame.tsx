@@ -606,22 +606,37 @@ export default function TradingGame() {
   const fetchAdminData = async () => {
     setAdminError(null);
     try {
-        const res = await fetch('/api/admin', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ userEmail: currentUser?.email }),
-        });
+        // 1. Stats
+        const { count: userCount, error: uErr } = await supabase
+            .from('profiles')
+            .select('*', { count: 'exact', head: true });
 
-        const data = await res.json();
+        const { count: transCount, error: tErr } = await supabase
+            .from('transactions')
+            .select('*', { count: 'exact', head: true });
 
-        if (!res.ok) {
-            setAdminError(data.error || `Erreur HTTP ${res.status}`);
+        if (uErr || tErr) {
+            setAdminError(uErr?.message || tErr?.message || 'Erreur de permission RLS');
             return;
         }
 
-        setAdminStats(data.stats);
-        setAdminUsersList(data.users);
-        setAdminTransactionsList(data.transactions);
+        setAdminStats({ users: userCount || 0, transactions: transCount || 0 });
+
+        // 2. Transactions
+        const { data: transactions } = await supabase
+            .from('transactions')
+            .select('*')
+            .order('created_at', { ascending: false })
+            .limit(200);
+        setAdminTransactionsList(transactions || []);
+
+        // 3. Utilisateurs
+        const { data: users } = await supabase
+            .from('profiles')
+            .select('*')
+            .order('created_at', { ascending: false })
+            .limit(500);
+        setAdminUsersList(users || []);
     } catch (e: any) {
         setAdminError(e.message || 'Erreur réseau');
     }
