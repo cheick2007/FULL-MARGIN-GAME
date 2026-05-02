@@ -240,6 +240,25 @@ const TRANSLATIONS: any = {
         status: "STATUT",
         active: "ACTIF",
         banned: "BANNI",
+        login_title: "BON RETOUR",
+        login_button: "CONNEXION",
+        register_title: "CRÉER UN COMPTE",
+        register_button: "S'INSCRIRE",
+        email_label: "EMAIL",
+        password_label: "MOT DE PASSE",
+        show: "VOIR",
+        hide: "CACHER",
+        no_account: "Pas de compte ?",
+        has_account: "Déjà un compte ?",
+        sign_up: "S'inscrire",
+        sign_in: "Se connecter",
+        execute_order: "EXÉCUTER L'ORDRE",
+        liquidated: "LIQUIDÉ",
+        profit: "PROFIT",
+        pause: "PAUSE",
+        resume: "REPRENDRE",
+        abandon: "ABANDONNER",
+        return_menu: "RETOUR AU MENU"
     },
     en: {
         welcome: "WELCOME",
@@ -272,6 +291,25 @@ const TRANSLATIONS: any = {
         status: "STATUS",
         active: "ACTIVE",
         banned: "BANNED",
+        login_title: "WELCOME BACK",
+        login_button: "LOGIN",
+        register_title: "CREATE ACCOUNT",
+        register_button: "SIGN UP",
+        email_label: "EMAIL",
+        password_label: "PASSWORD",
+        show: "SHOW",
+        hide: "HIDE",
+        no_account: "No account?",
+        has_account: "Have an account?",
+        sign_up: "Sign up",
+        sign_in: "Sign in",
+        execute_order: "EXECUTE ORDER",
+        liquidated: "LIQUIDATED",
+        profit: "PROFIT",
+        pause: "PAUSE",
+        resume: "RESUME",
+        abandon: "ABANDON",
+        return_menu: "RETURN TO MENU"
     }
 };
 
@@ -1428,61 +1466,69 @@ export default function TradingGame() {
         </div>
       )}
 
-      {/* Interface Tête-Haute (HUD) - Visible en jeu */}
+      {/* HUD - Interface de Jeu */}
       {gameState === 'playing' && (
-        <div className="absolute top-0 left-0 w-full p-4 md:p-6 pointer-events-none">
-          {/* Notification de Checkpoint */}
-          {checkpointReached && gameMode === 'standard' && (
-            <div className="absolute top-20 left-1/2 -translate-x-1/2 text-blue-500 font-bold tracking-widest animate-pulse">
-              CHECKPOINT SECURED
-            </div>
-          )}
-
-          <div className="flex justify-between items-start pt-4 md:pt-8">
-            <div className="space-y-2">
-              <div className="flex items-center gap-2">
-                <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
-                <span className="text-[10px] md:text-xs text-green-500 font-bold uppercase tracking-widest">{TRANSLATIONS[lang].active} • {gameMode === 'standard' ? 'Standard' : 'Hardcore'}</span>
+        <div className="fixed inset-x-0 top-0 z-[150] p-4 md:p-8 flex flex-col pointer-events-none">
+          <div className="flex items-start justify-between w-full">
+            {/* Statuts & Barre de Progression */}
+            <div className="flex flex-col gap-3 w-full max-w-[140px] md:max-w-xs">
+              <div className="flex items-center gap-1.5 px-2.5 py-1 bg-green-500/10 border border-green-500/20 rounded-full w-fit">
+                <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" />
+                <span className="text-[8px] md:text-[10px] font-black text-green-500 uppercase tracking-widest">{TRANSLATIONS[lang].active}</span>
               </div>
               
-              <div className="flex flex-col">
-                <div className="flex justify-between items-center mb-1">
-                  <span className="text-[8px] md:text-[10px] text-gray-500 uppercase tracking-tighter">Margin level progress</span>
-                  <span className="text-[8px] md:text-[10px] text-gray-400 font-mono">{Math.floor((levelProgress / maxDistance) * 100)}%</span>
+              <div className="space-y-2">
+                <div className="flex justify-between items-center">
+                   <div className="flex gap-1">
+                      {Array.from({ length: 3 }).map((_, i) => (
+                        <div key={i} className={`w-2.5 h-2.5 md:w-4 md:h-4 rounded-sm border ${i < lives ? 'bg-red-500 border-red-400 shadow-[0_0_8px_rgba(239,68,68,0.4)]' : 'bg-white/5 border-white/10 opacity-20'}`} />
+                      ))}
+                   </div>
+                   <span className="text-[8px] md:text-[10px] font-black text-white/40 uppercase italic tracking-widest">{gameMode === 'standard' ? 'STD' : 'HC'}</span>
                 </div>
-                <div className="w-40 md:w-80 h-1.5 bg-zinc-900 rounded-full overflow-hidden border border-white/5">
-                  <div
-                    className={`h-full transition-all duration-300 ${checkpointReached ? 'bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.5)]' : 'bg-green-500 shadow-[0_0_10px_rgba(34,197,94,0.5)]'}`}
-                    style={{ width: `${Math.min(100, (levelProgress / maxDistance) * 100)}%` }}
-                  />
+
+                <div className="space-y-1">
+                  <div className="flex justify-between items-end text-[7px] md:text-[9px] font-black text-white/50 uppercase tracking-tighter">
+                    <span>Margin Level</span>
+                    <span className="text-white">{Math.floor((levelProgress / maxDistance) * 100)}%</span>
+                  </div>
+                  <div className="h-1.5 md:h-2 bg-zinc-900 rounded-full overflow-hidden border border-white/5 relative">
+                    <div 
+                      className={`h-full transition-all duration-300 ${checkpointReached ? 'bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.5)]' : 'bg-green-500 shadow-[0_0_10px_rgba(34,197,94,0.5)]'}`}
+                      style={{ width: `${Math.min(100, (levelProgress / maxDistance) * 100)}%` }}
+                    />
+                  </div>
                 </div>
               </div>
-
-              {gameMode === 'standard' && (
-                <div className="flex gap-1.5 pt-2">
-                  {Array.from({ length: 3 }).map((_, i) => (
-                    <div key={i} className={`w-3 h-3 md:w-4 md:h-4 rounded-sm border ${i < lives ? 'bg-red-500 border-red-400 shadow-[0_0_8px_rgba(239,68,68,0.4)]' : 'bg-zinc-800 border-white/5'}`}></div>
-                  ))}
-                </div>
-              )}
             </div>
 
-            <div className="text-right flex flex-col items-end gap-1">
-              <div className="bg-zinc-900/80 backdrop-blur-md px-4 py-2 rounded-2xl border border-white/5 shadow-xl">
-                <div className="text-2xl md:text-5xl font-black tracking-tighter text-white tabular-nums">${score.toLocaleString()}</div>
-                <div className="text-[8px] md:text-xs text-gray-500 uppercase tracking-widest font-bold">
-                  {TRANSLATIONS[lang].profit} • Lvl {level}
-                </div>
+            {/* Score & Niveau (Card Premium) */}
+            <div className="flex flex-col items-end gap-2">
+              <div className="bg-zinc-900/90 backdrop-blur-xl border border-white/10 p-3 md:p-5 rounded-2xl md:rounded-3xl shadow-2xl text-center min-w-[90px] md:min-w-[150px]">
+                <div className="text-2xl md:text-5xl font-black text-white tracking-tighter leading-none">${score.toLocaleString()}</div>
+                <div className="text-[7px] md:text-[10px] text-gray-500 font-bold uppercase tracking-[0.2em] mt-1">{TRANSLATIONS[lang].profit} • ZONE {level}</div>
               </div>
               
               <button 
                 onClick={() => setIsPaused(true)}
-                className="mt-2 flex items-center gap-2 px-3 py-1.5 bg-white/5 hover:bg-white/10 border border-white/5 rounded-lg text-[8px] md:text-[10px] font-bold uppercase tracking-widest transition-all"
+                className="pointer-events-auto p-2.5 md:p-4 bg-zinc-900/90 backdrop-blur-xl border border-white/10 rounded-xl md:rounded-2xl text-yellow-500 hover:scale-105 transition-all shadow-xl active:scale-95"
               >
-                <span>⏸</span> {TRANSLATIONS[lang].pause}
+                <div className="flex items-center gap-2">
+                  <span className="text-xs md:text-sm">⏸</span>
+                  <span className="text-[8px] md:text-[10px] font-black uppercase tracking-widest">{TRANSLATIONS[lang].pause}</span>
+                </div>
               </button>
             </div>
           </div>
+
+          {/* Alertes visuelles (Checkpoint) */}
+          {checkpointReached && gameMode === 'standard' && (
+            <div className="fixed top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 text-center animate-pulse z-50">
+              <div className="text-blue-500 text-2xl md:text-5xl font-black uppercase tracking-[0.3em] drop-shadow-[0_0_20px_rgba(59,130,246,0.6)]">
+                CHECKPOINT<br />SECURED
+              </div>
+            </div>
+          )}
         </div>
       )}
 
@@ -1545,19 +1591,19 @@ export default function TradingGame() {
               }}
             >
               <div className="absolute inset-0 bg-green-500/20 blur-2xl rounded-full group-hover:bg-green-500/30 transition-all duration-700"></div>
-              <div className="relative z-10 w-24 h-24 md:w-36 md:h-36 rounded-[2rem] md:rounded-[2.5rem] overflow-hidden border border-white/10 shadow-2xl transition-transform duration-500 group-hover:scale-105 group-hover:rotate-1">
+              <div className="relative z-10 w-20 h-20 md:w-36 md:h-36 rounded-[1.5rem] md:rounded-[2.5rem] overflow-hidden border border-white/10 shadow-2xl transition-transform duration-500 group-hover:scale-105 group-hover:rotate-1">
                 <img src="/logo.png" alt="Logo" className="w-full h-full object-cover" />
               </div>
             </div>
-            <h1 className="text-5xl md:text-8xl font-black mb-2 tracking-tighter flex items-center justify-center gap-3">
+            <h1 className="text-4xl md:text-8xl font-black mb-1 md:mb-2 tracking-tighter flex items-center justify-center gap-2 md:gap-3">
               <span className="text-white">TP</span>
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-green-400 via-emerald-500 to-green-600 drop-shadow-[0_0_15px_rgba(52,211,153,0.3)]">HIT</span>
             </h1>
-            <p className="text-gray-500 tracking-[0.3em] uppercase mb-8 md:mb-16 text-[10px] md:text-xs font-bold bg-white/5 px-4 py-1.5 rounded-full inline-block border border-white/5">{TRANSLATIONS[lang].high_volatility}</p>
+            <p className="text-gray-500 tracking-[0.2em] md:tracking-[0.3em] uppercase mb-6 md:mb-16 text-[8px] md:text-xs font-bold bg-white/5 px-4 py-1 rounded-full inline-block border border-white/5">{TRANSLATIONS[lang].high_volatility}</p>
 
             {/* Curseur de Vitesse */}
-            <div className="mb-8 max-w-xs mx-auto">
-              <label className="block text-gray-400 text-xs uppercase tracking-widest mb-2">{TRANSLATIONS[lang].game_speed}: {speedSetting}</label>
+            <div className="mb-10 max-w-xs mx-auto bg-zinc-900/50 backdrop-blur-md border border-white/5 p-4 rounded-2xl">
+              <label className="block text-gray-500 text-[10px] uppercase tracking-widest mb-3 font-black">{TRANSLATIONS[lang].game_speed}: <span className="text-white ml-2">{speedSetting}</span></label>
               <input
                 type="range"
                 min="3"
@@ -1565,9 +1611,9 @@ export default function TradingGame() {
                 step="0.5"
                 value={speedSetting}
                 onChange={(e) => setSpeedSetting(parseFloat(e.target.value))}
-                className="w-full accent-blue-500 cursor-pointer"
+                className="w-full accent-blue-500 cursor-pointer h-1.5 bg-black rounded-lg appearance-none"
               />
-              <div className="flex justify-between text-[10px] text-gray-600 px-1">
+              <div className="flex justify-between text-[8px] text-gray-600 px-1 mt-2 font-bold uppercase tracking-widest">
                 <span>Slow</span>
                 <span>Fast</span>
               </div>
@@ -1604,10 +1650,10 @@ export default function TradingGame() {
             </div>
 
             {/* Bouton vers la Boutique */}
-            <div className="mt-8 flex gap-4 justify-center">
+            <div className="mt-8 flex flex-col sm:flex-row gap-3 md:gap-4 justify-center px-6">
                 <button 
                     onClick={() => setGameState('shop')}
-                    className="px-8 py-3 border border-green-500 text-green-500 hover:bg-green-900/20 transition-all rounded-xl font-bold uppercase tracking-widest text-sm"
+                    className="w-full sm:w-auto px-8 py-3.5 border border-green-500/50 text-green-500 hover:bg-green-900/20 transition-all rounded-2xl font-black uppercase tracking-widest text-[10px] md:text-sm"
                 >
                     {TRANSLATIONS[lang].shop}
                 </button>
@@ -1616,7 +1662,7 @@ export default function TradingGame() {
                         setLeaderboardView(true);
                         fetchLeaderboard();
                     }}
-                    className="px-8 py-3 bg-green-600 text-white hover:bg-green-500 transition-all rounded-xl font-bold uppercase tracking-widest text-sm shadow-lg shadow-green-500/20 flex items-center gap-2"
+                    className="w-full sm:w-auto px-8 py-3.5 bg-green-600 text-white hover:bg-green-500 transition-all rounded-2xl font-black uppercase tracking-widest text-[10px] md:text-sm shadow-xl shadow-green-500/20 flex items-center justify-center gap-2"
                 >
                     <span>🏆</span> {TRANSLATIONS[lang].leaderboard}
                 </button>

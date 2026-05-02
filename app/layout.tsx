@@ -19,8 +19,24 @@ const geistMono = Geist_Mono({
 
 // Métadonnées de l'application (affichées dans les onglets du navigateur et moteurs de recherche)
 export const metadata: Metadata = {
-  title: "TP HIT", // Titre de l'onglet
-  description: "High Volatility Survival Game", // Description pour le SEO
+  title: "TP HIT | Trading Protocol Survival", 
+  description: "Survivez à la haute volatilité du marché. Le jeu de trading hardcore ultime.",
+  viewport: {
+    width: "device-width",
+    initialScale: 1,
+    maximumScale: 1,
+    userScalable: false,
+  },
+  themeColor: "#000000",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "TP HIT",
+  },
+  icons: {
+    icon: "/logo.png",
+    apple: "/logo.png",
+  },
 };
 
 // Composant Racine (RootLayout) qui enveloppe toutes les pages de l'application
