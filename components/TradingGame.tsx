@@ -40,21 +40,21 @@ const MAP_THEMES = [
 // Définition des Skins
 const SKINS = [
     { id: 'default', name: 'Trader Base', price: 0, type: 'basic', desc: 'Le modèle classique.' },
-    { id: 'crypto_bro', name: 'Crypto Bro', price: 1000, type: 'pro', desc: 'Lunettes laser activées.' },
-    { id: 'trader_pro', name: 'Wall Street', price: 2500, type: 'pro', desc: 'Costume chic.' },
-    { id: 'paper_hands', name: 'Paper Hands', price: 5000, type: 'pro', desc: 'Mains fragiles.' },
-    { id: 'diamond_hands', name: 'Diamond Hands', price: 10000, type: 'pro', desc: 'HODL jusqu\'au bout.' },
-    { id: 'satoshi', name: 'Satoshi', price: 20000, type: 'pro', desc: 'Anonyme et mythique.' },
+    { id: 'crypto_bro', name: 'Crypto Bro', price: 2000, type: 'pro', desc: 'Lunettes laser activées.' },
+    { id: 'trader_pro', name: 'Wall Street', price: 5000, type: 'pro', desc: 'Costume chic.' },
+    { id: 'paper_hands', name: 'Paper Hands', price: 10000, type: 'pro', desc: 'Mains fragiles.' },
+    { id: 'diamond_hands', name: 'Diamond Hands', price: 20000, type: 'pro', desc: 'HODL jusqu\'au bout.' },
+    { id: 'satoshi', name: 'Satoshi', price: 40000, type: 'pro', desc: 'Anonyme et mythique.' },
     { id: 'golden_whale', name: 'Golden Whale', price: 500, type: 'premium', desc: 'Statut VIP.' },
     { id: 'bear_market', name: 'Bear Market', price: 500, type: 'premium', desc: 'Avatar massif.' },
     { id: 'bull_market', name: 'Bull Market', price: 500, type: 'premium', desc: 'Prêt à charger.' },
     { id: 'degen_ape', name: 'Degen Ape', price: 500, type: 'premium', desc: 'Singe rebelle.' },
     { id: 'liquidator', name: 'The Liquidator', price: 500, type: 'premium', desc: 'Robot impitoyable.' },
-    { id: 'day_trader', name: 'Day Trader', price: 3000, type: 'pro', desc: 'Rapide et stressé.' },
-    { id: 'swing_trader', name: 'Swing Trader', price: 4000, type: 'pro', desc: 'Patient et calme.' },
-    { id: 'scalper', name: 'Scalper', price: 6000, type: 'pro', desc: 'Toujours à l\'affût.' },
-    { id: 'altcoin_maxi', name: 'Altcoin Maxi', price: 8000, type: 'pro', desc: 'Risque maximum.' },
-    { id: 'broke_student', name: 'Étudiant Fauché', price: 1000, type: 'pro', desc: 'Trade avec 10$.' },
+    { id: 'day_trader', name: 'Day Trader', price: 6000, type: 'pro', desc: 'Rapide et stressé.' },
+    { id: 'swing_trader', name: 'Swing Trader', price: 8000, type: 'pro', desc: 'Patient et calme.' },
+    { id: 'scalper', name: 'Scalper', price: 12000, type: 'pro', desc: 'Toujours à l\'affût.' },
+    { id: 'altcoin_maxi', name: 'Altcoin Maxi', price: 16000, type: 'pro', desc: 'Risque maximum.' },
+    { id: 'broke_student', name: 'Étudiant Fauché', price: 2000, type: 'pro', desc: 'Trade avec 10$.' },
     { id: 'cyber_ninja', name: 'Cyber Ninja', price: 500, type: 'premium', desc: 'Furtif.' },
     { id: 'illuminati', name: 'Illuminati', price: 500, type: 'premium', desc: 'Il contrôle tout.' },
     { id: 'astronaut', name: 'Astronaut', price: 500, type: 'premium', desc: 'To the moon.' },
@@ -75,25 +75,25 @@ const SKINS = [
 // Définition des Gadgets
 const GADGETS = [
     { id: 'none', name: 'Aucun Gadget', price: 0, type: 'basic', desc: 'Rien.' },
-    { id: 'blue_aura', name: 'Aura Bleue', price: 500, type: 'pro', desc: 'Aura basique.' },
-    { id: 'green_aura', name: 'Aura Verte', price: 1000, type: 'pro', desc: 'Aura nature.' },
-    { id: 'red_aura', name: 'Aura Rouge', price: 1500, type: 'pro', desc: 'Aura de feu.' },
-    { id: 'yellow_aura', name: 'Aura Jaune', price: 2000, type: 'pro', desc: 'Aura électrique.' },
-    { id: 'purple_aura', name: 'Aura Violette', price: 2500, type: 'pro', desc: 'Aura sombre.' },
-    { id: 'white_aura', name: 'Aura Blanche', price: 3000, type: 'pro', desc: 'Aura pure.' },
-    { id: 'black_aura', name: 'Aura Noire', price: 3500, type: 'pro', desc: 'Aura ténébreuse.' },
-    { id: 'cap_blue', name: 'Casquette Bleue', price: 4000, type: 'pro', desc: 'Style décontracté.' },
-    { id: 'cap_red', name: 'Casquette Rouge', price: 4500, type: 'pro', desc: 'Style urbain.' },
-    { id: 'cap_green', name: 'Casquette Verte', price: 5000, type: 'pro', desc: 'Style nature.' },
-    { id: 'trail_smoke', name: 'Traînée Fumée', price: 6000, type: 'pro', desc: 'Laisse de la fumée.' },
-    { id: 'trail_spark', name: 'Traînée Étincelles', price: 7000, type: 'pro', desc: 'Petites étincelles.' },
-    { id: 'trail_pixel', name: 'Traînée Pixels', price: 8000, type: 'pro', desc: 'Style rétro.' },
-    { id: 'pet_cube', name: 'Mini-Cube', price: 10000, type: 'pro', desc: 'Un cube qui flotte.' },
-    { id: 'pet_orb', name: 'Orbe Magique', price: 12000, type: 'pro', desc: 'Une orbe brillante.' },
-    { id: 'pet_ghost', name: 'Petit Fantôme', price: 15000, type: 'pro', desc: 'Un fantôme mignon.' },
-    { id: 'glasses_nerd', name: 'Lunettes Nerd', price: 2000, type: 'pro', desc: 'Intello.' },
-    { id: 'glasses_sun', name: 'Lunettes Soleil', price: 3000, type: 'pro', desc: 'Cool attitude.' },
-    { id: 'headband', name: 'Bandeau Ninja', price: 8000, type: 'pro', desc: 'Prêt au combat.' },
+    { id: 'blue_aura', name: 'Aura Bleue', price: 1000, type: 'pro', desc: 'Aura basique.' },
+    { id: 'green_aura', name: 'Aura Verte', price: 2000, type: 'pro', desc: 'Aura nature.' },
+    { id: 'red_aura', name: 'Aura Rouge', price: 3000, type: 'pro', desc: 'Aura de feu.' },
+    { id: 'yellow_aura', name: 'Aura Jaune', price: 4000, type: 'pro', desc: 'Aura électrique.' },
+    { id: 'purple_aura', name: 'Aura Violette', price: 5000, type: 'pro', desc: 'Aura sombre.' },
+    { id: 'white_aura', name: 'Aura Blanche', price: 6000, type: 'pro', desc: 'Aura pure.' },
+    { id: 'black_aura', name: 'Aura Noire', price: 7000, type: 'pro', desc: 'Aura ténébreuse.' },
+    { id: 'cap_blue', name: 'Casquette Bleue', price: 8000, type: 'pro', desc: 'Style décontracté.' },
+    { id: 'cap_red', name: 'Casquette Rouge', price: 9000, type: 'pro', desc: 'Style urbain.' },
+    { id: 'cap_green', name: 'Casquette Verte', price: 10000, type: 'pro', desc: 'Style nature.' },
+    { id: 'trail_smoke', name: 'Traînée Fumée', price: 12000, type: 'pro', desc: 'Laisse de la fumée.' },
+    { id: 'trail_spark', name: 'Traînée Étincelles', price: 14000, type: 'pro', desc: 'Petites étincelles.' },
+    { id: 'trail_pixel', name: 'Traînée Pixels', price: 16000, type: 'pro', desc: 'Style rétro.' },
+    { id: 'pet_cube', name: 'Mini-Cube', price: 20000, type: 'pro', desc: 'Un cube qui flotte.' },
+    { id: 'pet_orb', name: 'Orbe Magique', price: 24000, type: 'pro', desc: 'Une orbe brillante.' },
+    { id: 'pet_ghost', name: 'Petit Fantôme', price: 30000, type: 'pro', desc: 'Un fantôme mignon.' },
+    { id: 'glasses_nerd', name: 'Lunettes Nerd', price: 4000, type: 'pro', desc: 'Intello.' },
+    { id: 'glasses_sun', name: 'Lunettes Soleil', price: 6000, type: 'pro', desc: 'Cool attitude.' },
+    { id: 'headband', name: 'Bandeau Ninja', price: 16000, type: 'pro', desc: 'Prêt au combat.' },
     { id: 'crown', name: 'Couronne Royale', price: 500, type: 'premium', desc: 'Le roi du marché.' },
     { id: 'halo', name: 'Auréole Dorée', price: 500, type: 'premium', desc: 'Un ange pur.' },
     { id: 'horns', name: 'Cornes Démon', price: 500, type: 'premium', desc: 'Démon du marché.' },
@@ -518,6 +518,7 @@ export default function TradingGame() {
   const [unlockedGadgets, setUnlockedGadgets] = useState<string[]>(['none']);
   const [activeGadget, setActiveGadget] = useState<string>('none');
   const [shopTab, setShopTab] = useState<'skins' | 'gadgets'>('skins');
+  const [notification, setNotification] = useState<{ title: string; reward: number; icon: string } | null>(null);
   const [showWaveModal, setShowWaveModal] = useState<string | null>(null);
   const [isPaused, setIsPaused] = useState(false);
   const [maxDistance, setMaxDistance] = useState(1);
@@ -715,6 +716,12 @@ export default function TradingGame() {
     setUserStats(newStats);
     const newlyUnlocked = checkAchievements(newStats, unlockedAchievements, totalCoins);
     if (newlyUnlocked) {
+        const lastAchId = newlyUnlocked[newlyUnlocked.length - 1];
+        const lastAch = ACHIEVEMENTS.find(a => a.id === lastAchId);
+        if (lastAch) {
+            setNotification({ title: lastAch.title[lang], reward: lastAch.reward, icon: lastAch.icon });
+            setTimeout(() => setNotification(null), 5000);
+        }
         setUnlockedAchievements(newlyUnlocked);
         saveGlobalState(totalCoins, unlockedSkins, activeSkin, unlockedGadgets, activeGadget, newStats, newlyUnlocked);
     }
@@ -730,6 +737,12 @@ export default function TradingGame() {
     setUserStats(newStats);
     const newlyUnlocked = checkAchievements(newStats, unlockedAchievements, totalCoins);
     if (newlyUnlocked) {
+        const lastAchId = newlyUnlocked[newlyUnlocked.length - 1];
+        const lastAch = ACHIEVEMENTS.find(a => a.id === lastAchId);
+        if (lastAch) {
+            setNotification({ title: lastAch.title[lang], reward: lastAch.reward, icon: lastAch.icon });
+            setTimeout(() => setNotification(null), 5000);
+        }
         setUnlockedAchievements(newlyUnlocked);
         saveGlobalState(totalCoins, unlockedSkins, activeSkin, unlockedGadgets, activeGadget, newStats, newlyUnlocked);
     }
@@ -1299,6 +1312,22 @@ export default function TradingGame() {
     <div className="relative w-full h-full overflow-hidden font-mono select-none bg-black text-white touch-none">
       {/* Le Canvas où le jeu est dessiné */}
       <canvas ref={canvasRef} className="block w-full h-full" />
+
+      {/* Notification de Succès */}
+      {notification && (
+        <div className="fixed top-20 left-1/2 -translate-x-1/2 z-[400] w-[90%] max-w-sm animate-bounce-in px-4">
+          <div className="bg-zinc-900/90 backdrop-blur-xl border border-green-500/50 p-4 rounded-2xl shadow-[0_0_30px_rgba(34,197,94,0.3)] flex items-center gap-4">
+            <div className="w-12 h-12 bg-green-500/20 rounded-xl flex items-center justify-center text-green-400 shrink-0">
+               {React.createElement((IconMap as any)[notification.icon] || Trophy, { size: 28 })}
+            </div>
+            <div className="flex-1">
+              <p className="text-[10px] font-black text-green-500 uppercase tracking-widest">Succès Débloqué !</p>
+              <h4 className="text-sm font-bold text-white uppercase leading-tight">{notification.title}</h4>
+              <p className="text-[10px] text-gray-400 font-mono">+${notification.reward} P&L Reward</p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Écran d'Authentification */}
       {!currentUser && (
