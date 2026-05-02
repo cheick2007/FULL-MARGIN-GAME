@@ -1,26 +1,87 @@
+/* Importation de Tailwind CSS v4 */
 @import "tailwindcss";
 
+/* Définition des variables CSS globales (Custom Properties) */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Mode clair par défaut */
+  --background: #ffffff; /* Fond blanc */
+  --foreground: #171717; /* Texte noir/gris très foncé */
 }
 
+/* Thème Tailwind personnalisé en ligne */
 @theme inline {
+  /* Liaison des variables Tailwind aux variables CSS définies plus haut */
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  /* Liaison des polices aux variables définies dans layout.tsx */
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
+/* Styles pour le mode sombre (Dark Mode) si préféré par le système */
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --background: #0a0a0a; /* Fond noir profond */
+    --foreground: #ededed; /* Texte blanc cassé */
   }
 }
 
+/* Styles de base appliqués au corps de la page */
 body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+  overflow: hidden; /* Empêche le défilement de la page entière */
+}
+
+/* --- Animations Premium --- */
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes pulseSlow {
+  0%, 100% { opacity: 0.8; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.05); }
+}
+
+@keyframes slideRight {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(0); }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.3s ease-out forwards;
+}
+
+.animate-fade-in-up {
+  animation: fadeUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-pulse-slow {
+  animation: pulseSlow 3s ease-in-out infinite;
+}
+
+/* Scrollbar personnalisée pour la boutique */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.2);
 }
