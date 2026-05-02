@@ -841,13 +841,23 @@ export default function TradingGame() {
     const ctx = canvas.getContext('2d'); 
     if (!ctx) return;
 
-    // Si on est en pause, on ne lance pas la boucle de dessin (on garde l'image actuelle)
+    // Si on est en pause, on ne lance pas la boucle de dessin (on garde l'image actuelle)    // Si on est en pause, on ne lance pas la boucle de dessin (on garde l'image actuelle)
     if (isPaused) return;
 
-    // --- Variables Locales de la Boucle ---
+    // --- Variables de Contrôle ---
     let animationFrameId: number;
     let frames = 0;
-    let gameSpeed = speedSetting + (level * 0.4);
+
+    // --- Système de Coordonnées Logiques (Game Balance) ---
+    // On fixe une largeur logique de référence pour que le jeu soit identique sur tous les écrans.
+    const logicalWidth = 1000; 
+    const dpr = window.devicePixelRatio || 1;
+    // On calcule le ratio pour que 1000 unités logiques remplissent la largeur réelle de l'écran.
+    const viewScale = (canvas.width / dpr) / logicalWidth; 
+    // La hauteur logique dépend de la taille de l'écran pour garder le bon ratio.
+    const logicalHeight = (canvas.height / dpr) / viewScale;
+
+    const gameSpeed = speedSetting + (level * 0.4);
     let currentScore = score;
     let currentLives = lives;
     let distanceTraveled = levelProgress; 
@@ -855,10 +865,6 @@ export default function TradingGame() {
 
     const levelLength = 2000 + (level * 800);
     let currentTargetDistance = levelLength;
-
-    const viewScale = canvas.width / (window.devicePixelRatio || 1) < 768 ? 0.6 : 0.85;
-    const logicalWidth = (canvas.width / (window.devicePixelRatio || 1)) / viewScale;
-    const logicalHeight = (canvas.height / (window.devicePixelRatio || 1)) / viewScale;
 
     // --- Entités du Jeu ---
     const player = {
@@ -1081,15 +1087,17 @@ export default function TradingGame() {
             setLevelProgress(actualProgress);
         }
 
-        ctx.setTransform(viewScale, 0, 0, viewScale, 0, 0);
+        // Application du transform en tenant compte du DPR et du ViewScale
+        ctx.setTransform(dpr * viewScale, 0, 0, dpr * viewScale, 0, 0);
 
-        // Arrière-plan
+        // Arrière-plan (Remplit tout l'espace logique)
         ctx.fillStyle = currentTheme.bg;
         ctx.fillRect(0, 0, logicalWidth, logicalHeight);
 
-        // Grille
+        // Grille Premium Ultra-Subtile
         ctx.strokeStyle = currentTheme.grid;
-        ctx.lineWidth = 1;
+        ctx.globalAlpha = 0.15; // Grille très discrète
+        ctx.lineWidth = 1 / (dpr * viewScale); 
         ctx.beginPath();
         const gridSize = 100;
         const offset = distanceTraveled % gridSize;
@@ -1101,6 +1109,7 @@ export default function TradingGame() {
           ctx.moveTo(0, y); ctx.lineTo(logicalWidth, y);
         }
         ctx.stroke();
+        ctx.globalAlpha = 1.0;
 
         // Physique Joueur
         player.dy += player.gravity;
