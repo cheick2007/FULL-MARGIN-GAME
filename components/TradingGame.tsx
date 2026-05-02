@@ -2244,8 +2244,8 @@ export default function TradingGame() {
                   {/* Header Menu */}
                   <div className="p-6 md:p-8 border-b border-white/5 bg-gradient-to-br from-green-900/20 to-black">
                       <div className="flex items-center gap-4 mb-6">
-                          <div className="w-12 h-12 md:w-16 md:h-16 bg-zinc-900 rounded-xl md:rounded-2xl border border-white/10 overflow-hidden shadow-lg">
-                              <img src="/logo.png" className="w-full h-full object-cover" />
+                          <div className="w-12 h-12 md:w-16 md:h-16 bg-zinc-800 rounded-xl md:rounded-2xl border border-white/10 overflow-hidden shadow-xl flex items-center justify-center">
+                              <img src="/logo.png" alt="Logo" className="w-full h-full object-cover" />
                           </div>
                           <div>
                               <h2 className="text-lg md:text-xl font-black text-white leading-tight">TP HIT</h2>
