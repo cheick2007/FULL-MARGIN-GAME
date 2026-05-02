@@ -546,6 +546,9 @@ export default function TradingGame() {
   // Vitesse du jeu définie par l'utilisateur (par défaut 5)
   const [speedSetting, setSpeedSetting] = useState(5);
 
+  // Zoom du jeu (Plus grand = plus proche)
+  const [zoomSetting, setZoomSetting] = useState(1.4);
+
   // Indique si le joueur a atteint le checkpoint (pour le mode Standard)
   const [checkpointReached, setCheckpointReached] = useState(false);
   const [showCheckpointAnim, setShowCheckpointAnim] = useState(false);
@@ -861,10 +864,9 @@ export default function TradingGame() {
     let animationFrameId: number;
     let frames = 0;
 
-    // --- Système de Coordonnées Logiques (Game Balance) ---
-    // On fixe une largeur logique de référence pour que le jeu soit identique sur tous les écrans.
     // On fixe une largeur logique de référence (Plus petit = plus zoomé)
-    const logicalWidth = 750; 
+    // On utilise zoomSetting pour calculer la largeur logique : 1000 / zoom
+    const logicalWidth = Math.round(1000 / zoomSetting); 
     const dpr = window.devicePixelRatio || 1;
     // On calcule le ratio pour que 1000 unités logiques remplissent la largeur réelle de l'écran.
     const viewScale = (canvas.width / dpr) / logicalWidth; 
@@ -1626,22 +1628,45 @@ export default function TradingGame() {
             </h1>
             <p className="text-gray-500 tracking-[0.2em] md:tracking-[0.3em] uppercase mb-6 md:mb-16 text-[8px] md:text-xs font-bold bg-white/5 px-4 py-1 rounded-full inline-block border border-white/5">{TRANSLATIONS[lang].high_volatility}</p>
 
-            {/* Curseur de Vitesse */}
-            <div className="mb-10 max-w-xs mx-auto bg-zinc-900/50 backdrop-blur-md border border-white/5 p-4 rounded-2xl">
-              <label className="block text-gray-500 text-[10px] uppercase tracking-widest mb-3 font-black">{TRANSLATIONS[lang].game_speed}: <span className="text-white ml-2">{speedSetting}</span></label>
-              <input
-                type="range"
-                min="3"
-                max="10"
-                step="0.5"
-                value={speedSetting}
-                onChange={(e) => setSpeedSetting(parseFloat(e.target.value))}
-                className="w-full accent-blue-500 cursor-pointer h-1.5 bg-black rounded-lg appearance-none"
-              />
-              <div className="flex justify-between text-[8px] text-gray-600 px-1 mt-2 font-bold uppercase tracking-widest">
-                <span>Slow</span>
-                <span>Fast</span>
-              </div>
+            {/* Réglages : Vitesse et Zoom */}
+            <div className="mb-10 max-w-sm mx-auto grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="bg-zinc-900/50 backdrop-blur-md border border-white/5 p-4 rounded-2xl">
+                    <label className="block text-gray-500 text-[10px] uppercase tracking-widest mb-3 font-black">
+                        {TRANSLATIONS[lang].game_speed}: <span className="text-white ml-2">{speedSetting}</span>
+                    </label>
+                    <input
+                        type="range"
+                        min="3"
+                        max="10"
+                        step="0.5"
+                        value={speedSetting}
+                        onChange={(e) => setSpeedSetting(parseFloat(e.target.value))}
+                        className="w-full accent-green-500 cursor-pointer h-1.5 bg-black rounded-lg appearance-none"
+                    />
+                    <div className="flex justify-between text-[8px] text-gray-600 px-1 mt-2 font-bold uppercase tracking-widest">
+                        <span>Slow</span>
+                        <span>Fast</span>
+                    </div>
+                </div>
+
+                <div className="bg-zinc-900/50 backdrop-blur-md border border-white/5 p-4 rounded-2xl">
+                    <label className="block text-gray-500 text-[10px] uppercase tracking-widest mb-3 font-black">
+                        {lang === 'fr' ? 'ZOOM JEU' : 'GAME ZOOM'}: <span className="text-blue-400 ml-2">x{zoomSetting.toFixed(2)}</span>
+                    </label>
+                    <input
+                        type="range"
+                        min="1"
+                        max="2.5"
+                        step="0.1"
+                        value={zoomSetting}
+                        onChange={(e) => setZoomSetting(parseFloat(e.target.value))}
+                        className="w-full accent-blue-500 cursor-pointer h-1.5 bg-black rounded-lg appearance-none"
+                    />
+                    <div className="flex justify-between text-[8px] text-gray-600 px-1 mt-2 font-bold uppercase tracking-widest">
+                        <span>Wide</span>
+                        <span>Close</span>
+                    </div>
+                </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-8 max-w-4xl mx-auto px-4">
