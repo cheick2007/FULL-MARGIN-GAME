@@ -604,17 +604,31 @@ export default function TradingGame() {
   }, []);
 
   const fetchAdminData = async () => {
+    console.log("Fetching admin data...");
     // 1. Stats
-    const { count: userCount } = await supabase.from('profiles').select('*', { count: 'exact', head: true });
-    const { count: transCount } = await supabase.from('transactions').select('*', { count: 'exact', head: true });
+    const { count: userCount, error: uErr } = await supabase.from('profiles').select('*', { count: 'exact', head: true });
+    const { count: transCount, error: tErr } = await supabase.from('transactions').select('*', { count: 'exact', head: true });
+    
+    if (uErr) console.error("Admin: Error fetching user count", uErr);
+    
     setAdminStats({ users: userCount || 0, transactions: transCount || 0 });
 
     // 2. Transactions
-    const { data: transactions } = await supabase.from('transactions').select('*').order('created_at', { ascending: false });
+    const { data: transactions } = await supabase
+        .from('transactions')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(100);
     setAdminTransactionsList(transactions || []);
 
     // 3. Utilisateurs
-    const { data: users } = await supabase.from('profiles').select('*').order('created_at', { ascending: false });
+    const { data: users, error: lErr } = await supabase
+        .from('profiles')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(500); // Augmenté pour voir plus de monde
+        
+    if (lErr) console.error("Admin: Error fetching users list", lErr);
     setAdminUsersList(users || []);
   };
 
@@ -2085,17 +2099,25 @@ export default function TradingGame() {
       {adminView && (
         <div className="fixed inset-0 bg-[#0a0a0a] z-[200] overflow-y-auto p-4 md:p-10 pointer-events-auto">
             <div className="max-w-6xl mx-auto">
-                <div className="flex justify-between items-center mb-10 border-b border-white/10 pb-6">
+                <div className="flex justify-between items-center mb-10 border-b border-white/10 pb-6 flex-wrap gap-4">
                     <div>
                         <h2 className="text-4xl font-black text-white">ADMIN DASHBOARD</h2>
                         <p className="text-gray-500 text-sm uppercase tracking-widest">Gestion des Transactions & Bannissements</p>
                     </div>
-                    <button 
-                        onClick={() => setAdminView(false)}
-                        className="px-6 py-3 bg-white text-black font-bold rounded-xl hover:bg-gray-200 transition-all"
-                    >
-                        Quitter Dashboard
-                    </button>
+                    <div className="flex gap-4">
+                        <button 
+                            onClick={fetchAdminData}
+                            className="px-6 py-3 bg-zinc-800 text-white font-bold rounded-xl hover:bg-zinc-700 transition-all flex items-center gap-2 border border-white/5"
+                        >
+                            <span>🔄</span> Actualiser
+                        </button>
+                        <button 
+                            onClick={() => setAdminView(false)}
+                            className="px-6 py-3 bg-red-600 text-white font-bold rounded-xl hover:bg-red-500 transition-all shadow-lg shadow-red-900/20"
+                        >
+                            Quitter
+                        </button>
+                    </div>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
