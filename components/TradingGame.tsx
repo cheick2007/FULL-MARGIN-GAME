@@ -1605,18 +1605,7 @@ export default function TradingGame() {
           <div className="absolute inset-0 opacity-20" style={{ backgroundImage: 'radial-gradient(#333 1px, transparent 1px)', backgroundSize: '20px 20px' }}></div>
 
           <div className="text-center relative z-10 w-full max-w-4xl px-4 py-8">
-            <div 
-              className="mb-4 md:mb-10 cursor-help relative inline-block group"
-              onClick={(e) => {
-                const clicks = parseInt(e.currentTarget.dataset.clicks || '0') + 1;
-                e.currentTarget.dataset.clicks = clicks.toString();
-                if (clicks >= 5) {
-                  setAdminView(true);
-                  fetchAdminData();
-                  e.currentTarget.dataset.clicks = '0';
-                }
-              }}
-            >
+            <div className="mb-4 md:mb-10 relative inline-block group">
               <div className="absolute inset-0 bg-green-500/20 blur-2xl rounded-full group-hover:bg-green-500/30 transition-all duration-700"></div>
               <div className="relative z-10 w-20 h-20 md:w-36 md:h-36 rounded-[1.5rem] md:rounded-[2.5rem] overflow-hidden border border-white/10 shadow-2xl transition-transform duration-500 group-hover:scale-105 group-hover:rotate-1">
                 <img src="/logo.png" alt="Logo" className="w-full h-full object-cover" />
@@ -1626,48 +1615,7 @@ export default function TradingGame() {
               <span className="text-white">TP</span>
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-green-400 via-emerald-500 to-green-600 drop-shadow-[0_0_15px_rgba(52,211,153,0.3)]">HIT</span>
             </h1>
-            <p className="text-gray-500 tracking-[0.2em] md:tracking-[0.3em] uppercase mb-6 md:mb-16 text-[8px] md:text-xs font-bold bg-white/5 px-4 py-1 rounded-full inline-block border border-white/5">{TRANSLATIONS[lang].high_volatility}</p>
-
-            {/* Réglages : Vitesse et Zoom */}
-            <div className="mb-10 max-w-sm mx-auto grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="bg-zinc-900/50 backdrop-blur-md border border-white/5 p-4 rounded-2xl">
-                    <label className="block text-gray-500 text-[10px] uppercase tracking-widest mb-3 font-black">
-                        {TRANSLATIONS[lang].game_speed}: <span className="text-white ml-2">{speedSetting}</span>
-                    </label>
-                    <input
-                        type="range"
-                        min="3"
-                        max="10"
-                        step="0.5"
-                        value={speedSetting}
-                        onChange={(e) => setSpeedSetting(parseFloat(e.target.value))}
-                        className="w-full accent-green-500 cursor-pointer h-1.5 bg-black rounded-lg appearance-none"
-                    />
-                    <div className="flex justify-between text-[8px] text-gray-600 px-1 mt-2 font-bold uppercase tracking-widest">
-                        <span>Slow</span>
-                        <span>Fast</span>
-                    </div>
-                </div>
-
-                <div className="bg-zinc-900/50 backdrop-blur-md border border-white/5 p-4 rounded-2xl">
-                    <label className="block text-gray-500 text-[10px] uppercase tracking-widest mb-3 font-black">
-                        {lang === 'fr' ? 'ZOOM JEU' : 'GAME ZOOM'}: <span className="text-blue-400 ml-2">x{zoomSetting.toFixed(2)}</span>
-                    </label>
-                    <input
-                        type="range"
-                        min="1"
-                        max="2.5"
-                        step="0.1"
-                        value={zoomSetting}
-                        onChange={(e) => setZoomSetting(parseFloat(e.target.value))}
-                        className="w-full accent-blue-500 cursor-pointer h-1.5 bg-black rounded-lg appearance-none"
-                    />
-                    <div className="flex justify-between text-[8px] text-gray-600 px-1 mt-2 font-bold uppercase tracking-widest">
-                        <span>Wide</span>
-                        <span>Close</span>
-                    </div>
-                </div>
-            </div>
+            <p className="text-gray-500 tracking-[0.2em] md:tracking-[0.3em] uppercase mb-10 md:mb-20 text-[8px] md:text-xs font-bold bg-white/5 px-4 py-1 rounded-full inline-block border border-white/5">{TRANSLATIONS[lang].high_volatility}</p>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-8 max-w-4xl mx-auto px-4">
               {/* Bouton Mode Standard */}
@@ -2315,9 +2263,26 @@ export default function TradingGame() {
                               
                               <div className="pt-6 border-t border-white/5">
                                   <h3 className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-4">{TRANSLATIONS[lang].account_settings}</h3>
-                                  <div className="flex items-center justify-between p-3 md:p-4 bg-white/5 rounded-xl md:rounded-2xl">
-                                      <span className="text-[10px] md:text-xs text-gray-400">{TRANSLATIONS[lang].status}</span>
-                                      <span className="text-[9px] md:text-[10px] font-bold text-green-500 bg-green-500/10 px-2 py-1 rounded-full uppercase">{TRANSLATIONS[lang].active}</span>
+                                  <div className="flex flex-col gap-3">
+                                      <div className="flex items-center justify-between p-3 md:p-4 bg-white/5 rounded-xl md:rounded-2xl">
+                                          <span className="text-[10px] md:text-xs text-gray-400">{TRANSLATIONS[lang].status}</span>
+                                          <span className="text-[9px] md:text-[10px] font-bold text-green-500 bg-green-500/10 px-2 py-1 rounded-full uppercase">{TRANSLATIONS[lang].active}</span>
+                                      </div>
+                                      
+                                      {/* Bouton Admin Dashboard - Accès sécurisé */}
+                                      {currentUser?.email === 'maguiragacheick2@gmail.com' && (
+                                          <button 
+                                              onClick={() => {
+                                                  setAdminView(true);
+                                                  setIsHamburgerOpen(false);
+                                                  fetchAdminData();
+                                              }}
+                                              className="w-full py-4 bg-gradient-to-r from-red-600 to-red-800 text-white font-black uppercase tracking-widest rounded-xl shadow-lg shadow-red-900/20 hover:scale-[1.02] transition-all flex items-center justify-center gap-2 border border-red-500/30"
+                                          >
+                                              <Shield size={16} />
+                                              ADMIN PANEL
+                                          </button>
+                                      )}
                                   </div>
                               </div>
                           </div>
@@ -2368,25 +2333,62 @@ export default function TradingGame() {
                       )}
 
                       {hamburgerTab === 'settings' && (
-                          <div className="space-y-6">
+                          <div className="space-y-8">
                               <div>
                                   <h3 className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-4">{TRANSLATIONS[lang].language}</h3>
                                   <div className="grid grid-cols-2 gap-3">
                                       <button 
-                                          onClick={() => { setLang('fr'); saveGlobalState(totalCoins, unlockedSkins, activeSkin, unlockedGadgets, activeGadget, userStats, unlockedAchievements, claimedRewards, 'fr'); }}
-                                          className={`py-2 md:py-3 rounded-xl md:rounded-2xl border text-[10px] md:text-xs font-bold transition-all ${lang === 'fr' ? 'bg-green-600 border-green-500 text-white shadow-lg shadow-green-500/20' : 'bg-white/5 border-white/10 text-gray-500'}`}
+                                          onClick={() => setLang('fr')}
+                                          className={`py-2.5 text-[10px] font-black rounded-xl border transition-all ${lang === 'fr' ? 'bg-white text-black border-white' : 'bg-transparent text-gray-500 border-white/10'}`}
                                       >
-                                          Français
+                                          FRANÇAIS
                                       </button>
                                       <button 
-                                          onClick={() => { setLang('en'); saveGlobalState(totalCoins, unlockedSkins, activeSkin, unlockedGadgets, activeGadget, userStats, unlockedAchievements, claimedRewards, 'en'); }}
-                                          className={`py-2 md:py-3 rounded-xl md:rounded-2xl border text-[10px] md:text-xs font-bold transition-all ${lang === 'en' ? 'bg-green-600 border-green-500 text-white shadow-lg shadow-green-500/20' : 'bg-white/5 border-white/10 text-gray-500'}`}
+                                          onClick={() => setLang('en')}
+                                          className={`py-2.5 text-[10px] font-black rounded-xl border transition-all ${lang === 'en' ? 'bg-white text-black border-white' : 'bg-transparent text-gray-500 border-white/10'}`}
                                       >
-                                          English
+                                          ENGLISH
                                       </button>
                                   </div>
                               </div>
-                              
+
+                              <div>
+                                  <h3 className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-4">ENGINE PROTOCOL</h3>
+                                  <div className="space-y-6">
+                                      <div className="bg-white/5 p-4 rounded-2xl border border-white/5">
+                                          <div className="flex justify-between items-center mb-3">
+                                              <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{TRANSLATIONS[lang].game_speed}</label>
+                                              <span className="text-xs font-bold text-green-400">{speedSetting}</span>
+                                          </div>
+                                          <input
+                                              type="range"
+                                              min="3"
+                                              max="10"
+                                              step="0.5"
+                                              value={speedSetting}
+                                              onChange={(e) => setSpeedSetting(parseFloat(e.target.value))}
+                                              className="w-full accent-green-500 h-1.5 bg-black rounded-lg appearance-none"
+                                          />
+                                      </div>
+
+                                      <div className="bg-white/5 p-4 rounded-2xl border border-white/5">
+                                          <div className="flex justify-between items-center mb-3">
+                                              <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{lang === 'fr' ? 'ZOOM DU JEU' : 'GAME ZOOM'}</label>
+                                              <span className="text-xs font-bold text-blue-400">x{zoomSetting.toFixed(2)}</span>
+                                          </div>
+                                          <input
+                                              type="range"
+                                              min="1"
+                                              max="2.5"
+                                              step="0.1"
+                                              value={zoomSetting}
+                                              onChange={(e) => setZoomSetting(parseFloat(e.target.value))}
+                                              className="w-full accent-blue-500 h-1.5 bg-black rounded-lg appearance-none"
+                                          />
+                                      </div>
+                                  </div>
+                              </div>
+
                               <div className="pt-6 border-t border-white/5">
                                   <button 
                                       onClick={async () => {
@@ -2394,7 +2396,7 @@ export default function TradingGame() {
                                           setCurrentUser(null);
                                           setIsHamburgerOpen(false);
                                       }}
-                                      className="w-full py-3 md:py-4 bg-red-900/10 border border-red-900/20 text-red-500 text-[10px] md:text-xs font-black uppercase rounded-xl md:rounded-2xl hover:bg-red-900/20 transition-all flex items-center justify-center gap-2"
+                                      className="w-full py-4 bg-red-900/10 border border-red-900/20 text-red-500 text-[10px] md:text-xs font-black uppercase rounded-xl md:rounded-2xl hover:bg-red-900/20 transition-all flex items-center justify-center gap-2"
                                   >
                                       <span>🚪</span> {TRANSLATIONS[lang].logout}
                                   </button>
