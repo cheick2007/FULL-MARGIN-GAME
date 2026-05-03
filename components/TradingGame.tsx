@@ -804,17 +804,18 @@ export default function TradingGame() {
         }
         setUnlockedAchievements(newlyUnlocked);
         saveGlobalState(totalCoins, unlockedSkins, activeSkin, unlockedGadgets, activeGadget, newStats, newlyUnlocked);
+    } else {
+        // Sauvegarder les stats même sans succès débloqué
+        saveGlobalState(totalCoins, unlockedSkins, activeSkin, unlockedGadgets, activeGadget, newStats);
     }
     
     // Auto-transition après 2.5 secondes (seulement si toujours sur l'écran levelcomplete)
     const autoTimer = setTimeout(() => {
-        // On vérifie l'état courant via le callback du setter
         setGameState(current => {
             if (current === 'levelcomplete') {
-                // Déclencher nextLevel au prochain tick pour éviter la mutation dans le setter
                 queueMicrotask(() => nextLevel());
             }
-            return current; // On ne change pas ici, nextLevel() s'en charge
+            return current;
         });
     }, 2500);
   };
@@ -827,7 +828,12 @@ export default function TradingGame() {
       bestScore: Math.max(userStats.bestScore, score)
     };
     setUserStats(newStats);
-    const newlyUnlocked = checkAchievements(newStats, unlockedAchievements, totalCoins);
+    
+    // Sauvegarder les coins gagnés + stats
+    const newTotal = totalCoins + score;
+    setTotalCoins(newTotal);
+    
+    const newlyUnlocked = checkAchievements(newStats, unlockedAchievements, newTotal);
     if (newlyUnlocked) {
         const lastAchId = newlyUnlocked[newlyUnlocked.length - 1];
         const lastAch = ACHIEVEMENTS.find(a => a.id === lastAchId);
@@ -836,7 +842,10 @@ export default function TradingGame() {
             setTimeout(() => setNotification(null), 5000);
         }
         setUnlockedAchievements(newlyUnlocked);
-        saveGlobalState(totalCoins, unlockedSkins, activeSkin, unlockedGadgets, activeGadget, newStats, newlyUnlocked);
+        saveGlobalState(newTotal, unlockedSkins, activeSkin, unlockedGadgets, activeGadget, newStats, newlyUnlocked);
+    } else {
+        // TOUJOURS sauvegarder les stats et coins, même sans succès
+        saveGlobalState(newTotal, unlockedSkins, activeSkin, unlockedGadgets, activeGadget, newStats);
     }
   };
 
@@ -1325,7 +1334,9 @@ export default function TradingGame() {
             isGameOverTriggered = true;
             const newTotal = totalCoins + currentScore;
             setTotalCoins(newTotal);
-            saveGlobalState(newTotal, unlockedSkins, activeSkin);
+            const deathStats = { ...userStats, totalGames: userStats.totalGames + 1, bestScore: Math.max(userStats.bestScore, currentScore) };
+            setUserStats(deathStats);
+            saveGlobalState(newTotal, unlockedSkins, activeSkin, unlockedGadgets, activeGadget, deathStats);
             setGameState('gameover');
           } else if (currentLives > 0) {
             if (gameMode === 'standard') respawnAtCheckpoint();
@@ -1341,7 +1352,9 @@ export default function TradingGame() {
             isGameOverTriggered = true;
             const newTotal = totalCoins + currentScore;
             setTotalCoins(newTotal);
-            saveGlobalState(newTotal, unlockedSkins, activeSkin);
+            const deathStats = { ...userStats, totalGames: userStats.totalGames + 1, bestScore: Math.max(userStats.bestScore, currentScore) };
+            setUserStats(deathStats);
+            saveGlobalState(newTotal, unlockedSkins, activeSkin, unlockedGadgets, activeGadget, deathStats);
             setGameState('gameover');
           } else if (currentLives > 0) {
             if (gameMode === 'standard') respawnAtCheckpoint();
